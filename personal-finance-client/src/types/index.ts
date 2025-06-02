@@ -1,0 +1,108 @@
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface InvestmentType {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface Budget {
+  id: number;
+  name: string;
+  categoryId: number;
+  category?: Category;
+  amount: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface CreateBudgetRequest {
+  name: string;
+  categoryId: number;
+  amount: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface UpdateBudgetRequest {
+  name: string;
+  categoryId: number;
+  amount: number;
+  startDate: string;
+  endDate: string;
+}
+
+export interface Expense {
+  id: number;
+  categoryId: number;
+  category?: Category;
+  amount: number;
+  date: string;
+  description: string;
+  notes?: string;
+}
+
+export interface BudgetSummary {
+  categoryId: number;
+  categoryName: string;
+  totalAmount: number;
+  budgetAmount: number;
+  remainingAmount: number;
+}
+
+export type TransactionType = 'investment' | 'saving' | 'income';
+
+export interface Investment {
+  id: number;
+  name: string;
+  typeId: number;
+  amount: number;
+  date: string;
+  currentValue: number;
+  notes?: string;
+  returnRate?: number;
+}
+
+export interface CreateInvestmentDto {
+  name: string;
+  investmentTypeId: number;
+  amount: number;
+  date: string;
+  currentValue: number;
+  notes?: string;
+  returnRate?: number;
+}
+
+export interface Saving {
+  id: number;
+  name: string;
+  type: string; // e.g., 'emergency fund', 'retirement', 'goal-based'
+  targetAmount?: number;
+  currentAmount: number;
+  date: string;
+  notes?: string;
+  interestRate?: number;
+}
+
+export interface Income {
+  id: number;
+  source: string;
+  type: string; // e.g., 'salary', 'freelance', 'investment returns'
+  amount: number;
+  date: string;
+  isRecurring: boolean;
+  frequency?: string; // e.g., 'monthly', 'weekly', 'annually'
+  notes?: string;
+}
+
+export interface FinancialSummary {
+  totalInvestments: number;
+  totalSavings: number;
+  monthlyIncome: number;
+  yearlyIncome: number;
+  netWorth: number;
+} 
