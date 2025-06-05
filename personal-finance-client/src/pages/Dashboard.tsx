@@ -80,7 +80,7 @@ export default function Dashboard() {
               <Typography variant="h6">{formatCurrency(totalSpent)}</Typography>
             </Box>
             <Box>
-              <Typography variant="body2">Remaining</Typography>
+              <Typography variant="body2">Variance</Typography>
               <Typography variant="h6" color={remainingTotal >= 0 ? 'inherit' : 'error.light'}>
                 {formatCurrency(Math.abs(remainingTotal))}
               </Typography>

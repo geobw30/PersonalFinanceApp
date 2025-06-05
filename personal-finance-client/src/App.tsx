@@ -11,6 +11,7 @@ import Budgets from './pages/Budgets';
 import Expenses from './pages/Expenses';
 import Finance from './pages/Finance';
 import Settings from './pages/Settings';
+import Reports from './pages/Reports';
 
 const routerFutureConfig = {
   v7_startTransition: true
@@ -31,6 +32,7 @@ function AppContent() {
                 <Route path="expenses" element={<Expenses />} />
                 <Route path="budgets" element={<Budgets />} />
                 <Route path="finance" element={<Finance />} />
+                <Route path="reports" element={<Reports />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>

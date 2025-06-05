@@ -26,7 +26,8 @@ import {
   LightMode as LightIcon,
   DarkMode as DarkIcon,
   Savings as FinanceIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Report as ReportsIcon
 } from '@mui/icons-material';
 import { Link as RouterLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme as useMuiTheme } from '@mui/material/styles';
@@ -37,6 +38,7 @@ const navigationItems = [
   { label: 'Expenses', icon: <ExpenseIcon />, path: '/expenses' },
   { label: 'Budgets', icon: <BudgetIcon />, path: '/budgets' },
   { label: 'Finance', icon: <FinanceIcon />, path: '/finance' },
+  { label: 'Report', icon: <ReportsIcon />, path: '/reports' },
   { label: 'Settings', icon: <SettingsIcon />, path: '/settings' }
 ];
 
