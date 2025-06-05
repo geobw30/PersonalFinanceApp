@@ -198,36 +198,20 @@ export default function Finance() {
 
   const handleUpdateSaving = async (saving: Omit<Saving, 'id'>) => {
     if (!editingSaving) return;
-    // Try to get typeId from saving, editingSaving, or fallback to type.id or editingSaving.type.id
-    let typeId =
-      (saving as any).typeId ??
-      (saving as any).type?.id ??
-      (editingSaving as any).typeId ??
-      (editingSaving as any).type?.id;
-
-    // If still not found, try to get from savings list by id
-    if (!typeId && editingSaving.id) {
-      const found = savings.find(s => s.id === editingSaving.id);
-      typeId = (found as any)?.typeId ?? (found as any)?.type?.id;
-    }
-
-    // If still not found, try to get from editingSaving.typeName and match to savings types
-    if (!typeId && (editingSaving as any).typeName && Array.isArray(savings)) {
-      const match = savings.find(s => s.type === (editingSaving as any).typeName);
-      typeId = (match as any)?.typeId ?? (match as any)?.type?.id;
-    }
-
-    if (!typeId) {
+    // Use the correct type property for the backend
+    const payload = {
+      name: saving.name,
+      type: saving.type ?? editingSaving.type,
+      currentAmount: Number(saving.currentAmount),
+      targetAmount: saving.targetAmount ? Number(saving.targetAmount) : undefined,
+      date: saving.date ?? editingSaving.date ?? new Date().toISOString(),
+      interestRate: saving.interestRate ?? editingSaving.interestRate,
+      notes: saving.notes || undefined
+    };
+    if (!payload.type) {
       showToast('Saving type is required.', 'error');
       return;
     }
-    const payload = {
-      name: saving.name,
-      typeId,
-      currentAmount: Number(saving.currentAmount),
-      targetAmount: saving.targetAmount ? Number(saving.targetAmount) : undefined,
-      notes: saving.notes || undefined
-    };
     try {
       await updateSaving(editingSaving.id, payload);
       setEditSavingDialogOpen(false);
@@ -279,14 +263,16 @@ export default function Finance() {
 
   const handleUpdateIncome = async (income: Omit<Income, 'id'>) => {
     if (!editingIncome) return;
-    // Ensure payload matches backend expectations (types, required fields)
+    // Ensure payload matches backend expectations (include id, date, frequency)
     const payload = {
+      id: editingIncome.id,
       source: income.source,
       amount: Number(income.amount),
       type: income.type,
+      date: income.date ?? new Date().toISOString(),
       isRecurring: !!income.isRecurring,
-      frequency: income.isRecurring ? income.frequency : undefined,
-      notes: income.notes || undefined
+      frequency: income.isRecurring ? income.frequency : null,
+      notes: income.notes || null
     };
     try {
       await updateIncome(editingIncome.id, payload);
