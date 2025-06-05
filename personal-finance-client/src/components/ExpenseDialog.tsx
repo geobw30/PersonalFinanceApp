@@ -68,15 +68,6 @@ export default function ExpenseDialog({
       return;
     }
 
-    // Log the data being sent
-    console.log('Submitting expense data:', {
-      categoryId: categoryIdNumber,
-      amount: amountNumber,
-      date: expenseData.date,
-      description: expenseData.description.trim(),
-      notes: expenseData.notes.trim() || undefined
-    });
-
     onSave({
       categoryId: categoryIdNumber,
       amount: amountNumber,

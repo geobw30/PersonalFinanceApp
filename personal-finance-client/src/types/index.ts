@@ -59,7 +59,7 @@ export type TransactionType = 'investment' | 'saving' | 'income';
 export interface Investment {
   id: number;
   name: string;
-  typeId: number;
+  investmentTypeId: number;
   amount: number;
   date: string;
   currentValue: number;

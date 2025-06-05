@@ -34,6 +34,7 @@ export default function IncomeDialog({
     source: '',
     amount: 0,
     type: 'Salary',
+    date: new Date().toISOString().slice(0, 10),
     isRecurring: false,
     frequency: '',
     notes: ''
@@ -41,26 +42,28 @@ export default function IncomeDialog({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (initialIncome) {
-      setIncome({
-        source: initialIncome.source,
-        amount: initialIncome.amount,
-        type: initialIncome.type,
-        isRecurring: initialIncome.isRecurring,
-        frequency: initialIncome.frequency || '',
-        notes: initialIncome.notes || ''
-      });
-    } else {
-      setIncome({
-        source: '',
-        amount: 0,
-        type: 'Salary',
-        isRecurring: false,
-        frequency: '',
-        notes: ''
-      });
-    }
-  }, [initialIncome, open]);
+      if (initialIncome) {
+        setIncome({
+          source: initialIncome.source,
+          amount: initialIncome.amount,
+          type: initialIncome.type,
+          date: initialIncome.date,
+          isRecurring: initialIncome.isRecurring,
+          frequency: initialIncome.frequency || '',
+          notes: initialIncome.notes || ''
+        });
+      } else {
+        setIncome({
+          source: '',
+          amount: 0,
+          type: 'Salary',
+          date: new Date().toISOString().slice(0, 10),
+          isRecurring: false,
+          frequency: '',
+          notes: ''
+        });
+      }
+    }, [initialIncome, open]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -71,6 +74,7 @@ export default function IncomeDialog({
         source: '',
         amount: 0,
         type: 'Salary',
+        date: new Date().toISOString().slice(0, 10),
         isRecurring: false,
         frequency: '',
         notes: ''

@@ -26,7 +26,7 @@ import {
   Payments as IncomeIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import type { Investment, Saving, Income, FinancialSummary } from '../types';
+import type { Investment, Saving, Income, FinancialSummary, Expense } from '../types';
 import {
   getInvestments,
   getSavings,
@@ -40,7 +40,8 @@ import {
   deleteSaving,
   createIncome, // <-- add this
   updateIncome, // <-- add this
-  deleteIncome
+  deleteIncome,
+  getExpensesByMonth
 } from '../api/client';
 import { useToast } from '../contexts/ToastContext';
 import InvestmentDialog from '../components/InvestmentDialog';
@@ -104,19 +105,24 @@ export default function Finance() {
   const [editingIncome, setEditingIncome] = useState<Income | null>(null);
   const [deletingIncome, setDeletingIncome] = useState<Income | null>(null);
 
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+
   const fetchData = useCallback(async () => {
     try {
-      const [investmentsRes, savingsRes, incomesRes, summaryRes] = await Promise.all([
+      const now = new Date();
+      const [investmentsRes, savingsRes, incomesRes, summaryRes, expensesRes] = await Promise.all([
         getInvestments(),
         getSavings(),
         getIncomes(),
-        getFinancialSummary()
+        getFinancialSummary(),
+        getExpensesByMonth(now.getFullYear(), now.getMonth() + 1)
       ]);
 
       setInvestments(investmentsRes.data);
       setSavings(savingsRes.data);
       setIncomes(incomesRes.data);
       setSummary(summaryRes.data);
+      setExpenses(expensesRes.data);
     } catch (error) {
       console.error('Error fetching financial data:', error);
       showToast('Failed to load financial data', 'error');
@@ -263,7 +269,7 @@ export default function Finance() {
 
   const handleUpdateIncome = async (income: Omit<Income, 'id'>) => {
     if (!editingIncome) return;
-    // Ensure payload matches backend expectations (include id, date, frequency)
+    // Ensure notes is string or undefined, never null
     const payload = {
       id: editingIncome.id,
       source: income.source,
@@ -272,10 +278,10 @@ export default function Finance() {
       date: income.date ?? new Date().toISOString(),
       isRecurring: !!income.isRecurring,
       frequency: income.isRecurring ? income.frequency : null,
-      notes: income.notes || null
+      notes: income.notes ? income.notes : undefined // fix: never null
     };
     try {
-      await updateIncome(editingIncome.id, payload);
+      await updateIncome(editingIncome.id, payload as any); // cast if needed for backend id
       setEditIncomeDialogOpen(false);
       setEditingIncome(null);
       fetchData();
@@ -305,6 +311,33 @@ export default function Finance() {
     }
   };
 
+  // Helper: Deduct savings and expenses from income for the current month
+  const getAdjustedMonthlyIncome = () => {
+    if (!summary) return 0;
+    // Get current month/year
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Filter savings entered in the current month
+    const savingsThisMonth = savings.filter(s => {
+      const d = new Date(s.date);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+
+    // Use expenses from state (fetched for current month)
+    const expensesThisMonth = expenses;
+
+    // Sum the currentAmount for savings entered this month
+    const totalSavingsThisMonth = savingsThisMonth.reduce((sum, s) => sum + (s.currentAmount || 0), 0);
+
+    // Sum the amount for expenses entered this month
+    const totalExpensesThisMonth = expensesThisMonth.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    // Deduct savings and expenses from monthly income
+    return (summary.monthlyIncome || 0) - totalSavingsThisMonth - totalExpensesThisMonth;
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -328,6 +361,9 @@ export default function Finance() {
                 <Typography variant="h4" component="div" color="primary">
                   {formatCurrency(summary?.netWorth || 0)}
                 </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  (Current Net worth this month)
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -339,6 +375,9 @@ export default function Finance() {
                 </Typography>
                 <Typography variant="h4" component="div" color="success.main">
                   {formatCurrency(summary?.totalInvestments || 0)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  (Total investments for this month)
                 </Typography>
               </CardContent>
             </Card>
@@ -352,6 +391,9 @@ export default function Finance() {
                 <Typography variant="h4" component="div" color="info.main">
                   {formatCurrency(summary?.totalSavings || 0)}
                 </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  (Total savings for this month)
+                </Typography>
               </CardContent>
             </Card>
           </Grid>
@@ -359,10 +401,13 @@ export default function Finance() {
             <Card>
               <CardContent>
                 <Typography color="textSecondary" gutterBottom>
-                  Monthly Income
+                  Total Income
                 </Typography>
                 <Typography variant="h4" component="div" color="success.main">
-                  {formatCurrency(summary?.monthlyIncome || 0)}
+                  {formatCurrency(getAdjustedMonthlyIncome())}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  (Minus expenses and savings)
                 </Typography>
               </CardContent>
             </Card>
@@ -421,7 +466,8 @@ export default function Finance() {
                       </Typography>
                       {' - '}
                       <Typography component="span" variant="body2">
-                        {investment.type}
+                        {/* Show investment type id if available, else fallback to name */}
+                        {investment.investmentTypeId || investment.name}
                       </Typography>
                       {investment.returnRate && (
                         <>
@@ -593,7 +639,7 @@ export default function Finance() {
         }}
         onSave={handleUpdateSaving}
         mode="edit"
-        initialSaving={editingSaving}
+        initialSaving={editingSaving ?? undefined}
       />
       <ConfirmDialog
         open={deleteSavingConfirmDialogOpen}

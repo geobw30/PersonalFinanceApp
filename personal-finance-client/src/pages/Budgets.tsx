@@ -26,8 +26,8 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { Edit as EditOutlinedIcon, Delete as DeleteOutlinedIcon, ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
-import type { Budget, Category } from '../types';
-import { getBudgetsByMonth, createBudget, getCategories, updateBudget, deleteBudget } from '../api/client';
+import type { Budget, Category, Income } from '../types';
+import { getBudgetsByMonth, createBudget, getCategories, updateBudget, deleteBudget, getIncomesByMonth } from '../api/client';
 import { useToast } from '../contexts/ToastContext';
 
 const formatCurrency = (amount: number) => {
@@ -54,15 +54,18 @@ export default function Budgets() {
   const { showToast } = useToast();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [incomes, setIncomes] = useState<Income[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
-      const [budgetsRes, categoriesRes] = await Promise.all([
+      const [budgetsRes, categoriesRes, incomesRes] = await Promise.all([
         getBudgetsByMonth(selectedDate.getFullYear(), selectedDate.getMonth() + 1),
-        getCategories()
+        getCategories(),
+        getIncomesByMonth(selectedDate.getFullYear(), selectedDate.getMonth() + 1)
       ]);
       setBudgets(budgetsRes.data);
       setCategories(categoriesRes.data);
+      setIncomes(incomesRes.data);
     } catch (error) {
       setError('Failed to load data');
     } finally {
@@ -193,6 +196,15 @@ export default function Budgets() {
     }
   };
 
+  // Calculate total income for the selected month
+  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+
+  // Calculate total budget for the selected month
+  const totalBudget = budgets.reduce((total, budget) => total + budget.amount, 0);
+
+  // Calculate running balance (income - budget)
+  const runningBalance = totalIncome - totalBudget;
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
@@ -212,10 +224,16 @@ export default function Budgets() {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {format(selectedDate, 'MMMM yyyy')}
             </Typography>
+            <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
+              Total Income: {formatCurrency(totalIncome)}
+            </Typography>
+            <Typography variant="body2" color={runningBalance >= 0 ? "success.main" : "error.main"} sx={{ mt: 1 }}>
+              {runningBalance >= 0 ? "Unbudgeted Amount" : "Overbudgeted Amount"}: {formatCurrency(runningBalance)}
+            </Typography>
           </Box>
           <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="h4" color="primary" sx={{ fontWeight: 'medium' }}>
-              {formatCurrency(budgets.reduce((total, budget) => total + budget.amount, 0))}
+            <Typography variant="h4" color="primary.main" sx={{ fontWeight: 'medium' }}>
+              {formatCurrency(totalBudget)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Total Budget
@@ -416,4 +434,4 @@ export default function Budgets() {
       )}
     </Box>
   );
-} 
+}

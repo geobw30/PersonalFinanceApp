@@ -61,25 +61,7 @@ export default function InvestmentDialog({
     if (open) {
       setInvestmentData({
         name: initialInvestment?.name || '',
-        investmentTypeId:
-          initialInvestment?.typeId ||
-          initialInvestment?.investmentTypeId ||
-          (() => {
-            // Try to infer from initialInvestment.type (string) and investmentTypes
-            if (
-              initialInvestment?.type &&
-              Array.isArray(investmentTypes) &&
-              investmentTypes.length > 0
-            ) {
-              const match = investmentTypes.find(
-                (t) =>
-                  t.name.toLowerCase() ===
-                  (initialInvestment.type as string).toLowerCase()
-              );
-              return match ? match.id : 0;
-            }
-            return 0;
-          })(),
+        investmentTypeId: initialInvestment?.investmentTypeId || 0,
         amount: initialInvestment?.amount?.toString() || '',
         date: initialInvestment?.date || new Date().toISOString(),
         currentValue: initialInvestment?.currentValue?.toString() || '',
@@ -87,7 +69,7 @@ export default function InvestmentDialog({
         returnRate: initialInvestment?.returnRate?.toString() || ''
       });
     }
-  }, [open, initialInvestment, investmentTypes]);
+  }, [open, initialInvestment]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

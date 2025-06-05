@@ -21,7 +21,7 @@ interface SavingsDialogProps {
   initialSaving?: Saving;
 }
 
-const savingsTypes = ['Emergency Fund', 'Retirement', 'Vacation', 'Education', 'Other'];
+const savingsTypes = ['Emergency Fund', 'Retirement', 'Vacation', 'Education', 'Goal', 'Other'];
 
 export default function SavingsDialog({
   open,
