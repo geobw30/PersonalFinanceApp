@@ -9,11 +9,13 @@ import type {
   Income,
   FinancialSummary,
   InvestmentType,
-  CreateInvestmentDto
+  CreateInvestmentDto,
+  CreateBudgetRequest,
+  UpdateBudgetRequest
 } from '../types';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5254/api',
+  baseURL: 'http://localhost:5254/api', // TODO - get this from env variable
   headers: {
     'Content-Type': 'application/json',
   },
@@ -74,20 +76,6 @@ export const deleteCategory = (id: number) =>
   apiClient.delete(`/categories/${id}`);
 export const isCategoryInUse = (id: number) =>
   apiClient.get<{ inUse: boolean, usageDetails: { budgets: number, expenses: number } }>(`/categories/${id}/usage`);
-
-interface CreateBudgetRequest {
-  category: number;
-  amount: number;
-  month: Date;
-  notes?: string;
-}
-
-interface UpdateBudgetRequest {
-  category: number;
-  amount: number;
-  month: Date;
-  notes?: string;
-}
 
 // Budgets API
 export const getBudgets = () => apiClient.get<Budget[]>('/budgets');

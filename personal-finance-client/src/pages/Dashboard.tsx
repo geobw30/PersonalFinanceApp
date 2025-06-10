@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Paper, Typography, CircularProgress, useTheme, useMediaQuery } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
-import type { BudgetSummary } from '../api/client';
+import type { BudgetSummary } from '../types';
 import { getMonthlySummary } from '../api/client';
 
 // Currency formatter utility
