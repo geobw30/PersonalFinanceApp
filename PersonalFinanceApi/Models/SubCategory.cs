@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PersonalFinanceApi.Models;
 
-public class Category
+public class SubCategory
 {
     public int Id { get; set; }
 
@@ -12,7 +13,11 @@ public class Category
 
     public string? Description { get; set; }
 
-    public virtual ICollection<Budget> Budgets { get; set; } = new List<Budget>();
+    [Required]
+    public int CategoryId { get; set; }
+
+    [ForeignKey("CategoryId")]
+    public Category? Category { get; set; }
+
     public virtual ICollection<Expense> Expenses { get; set; } = new List<Expense>();
-    public virtual ICollection<SubCategory> SubCategories { get; set; } = new List<SubCategory>();
 }

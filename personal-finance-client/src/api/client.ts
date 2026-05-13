@@ -1,9 +1,11 @@
 import axios from 'axios';
 import type { 
-  Category, 
+  Category,
+  SubCategory,
   Budget, 
   Expense, 
   BudgetSummary,
+  BudgetReportItem,
   Investment,
   Saving,
   Income,
@@ -77,6 +79,17 @@ export const deleteCategory = (id: number) =>
 export const isCategoryInUse = (id: number) =>
   apiClient.get<{ inUse: boolean, usageDetails: { budgets: number, expenses: number } }>(`/categories/${id}/usage`);
 
+// SubCategories API
+export const getSubCategories = () => apiClient.get<SubCategory[]>('/subcategories');
+export const getSubCategoriesByCategory = (categoryId: number) =>
+  apiClient.get<SubCategory[]>(`/subcategories/by-category/${categoryId}`);
+export const createSubCategory = (subCategory: { categoryId: number; name: string; description?: string }) =>
+  apiClient.post<SubCategory>('/subcategories', subCategory);
+export const updateSubCategory = (id: number, subCategory: { name: string; description?: string }) =>
+  apiClient.put<void>(`/subcategories/${id}`, subCategory);
+export const deleteSubCategory = (id: number) =>
+  apiClient.delete(`/subcategories/${id}`);
+
 // Budgets API
 export const getBudgets = () => apiClient.get<Budget[]>('/budgets');
 export const getBudgetsByMonth = (year: number, month: number) =>
@@ -94,6 +107,8 @@ export const getExpensesByMonth = (year: number, month: number) =>
   apiClient.get<Expense[]>(`/expenses/month/${year}/${month}`);
 export const getMonthlySummary = (year: number, month: number) =>
   apiClient.get<BudgetSummary[]>(`/expenses/summary/${year}/${month}`);
+export const getBudgetReport = (year: number, month: number) =>
+  apiClient.get<BudgetReportItem[]>(`/expenses/budget-report/${year}/${month}`);
 export const createExpense = (expense: Omit<Expense, 'id'>) =>
   apiClient.post<Expense>('/expenses', expense);
 export const updateExpense = (id: number, expense: Omit<Expense, 'id'>) =>

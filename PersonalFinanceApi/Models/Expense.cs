@@ -21,6 +21,11 @@ public class Expense
     [ForeignKey("CategoryId")]
     public Category? Category { get; set; }
 
+    public int? SubCategoryId { get; set; }
+
+    [ForeignKey("SubCategoryId")]
+    public SubCategory? SubCategory { get; set; }
+
     [Required]
     public DateTime Date { get; set; }
 

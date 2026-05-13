@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<Category> Categories { get; set; } = null!;
+    public DbSet<SubCategory> SubCategories { get; set; } = null!;
     public DbSet<Budget> Budgets { get; set; } = null!;
     public DbSet<Expense> Expenses { get; set; } = null!;
     public DbSet<Investment> Investments { get; set; } = null!;
@@ -21,6 +22,20 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configure SubCategory → Category relationship
+        modelBuilder.Entity<SubCategory>()
+            .HasOne(sc => sc.Category)
+            .WithMany(c => c.SubCategories)
+            .HasForeignKey(sc => sc.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure Expense → SubCategory relationship
+        modelBuilder.Entity<Expense>()
+            .HasOne(e => e.SubCategory)
+            .WithMany(sc => sc.Expenses)
+            .HasForeignKey(e => e.SubCategoryId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // Configure relationships for Budget
         modelBuilder.Entity<Budget>()

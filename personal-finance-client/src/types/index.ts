@@ -2,6 +2,15 @@ export interface Category {
   id: number;
   name: string;
   description?: string;
+  subCategories?: SubCategory[];
+}
+
+export interface SubCategory {
+  id: number;
+  name: string;
+  description?: string;
+  categoryId: number;
+  categoryName?: string;
 }
 
 export interface InvestmentType {
@@ -40,6 +49,8 @@ export interface Expense {
   id: number;
   categoryId: number;
   category?: Category;
+  subCategoryId?: number;
+  subCategory?: SubCategory;
   amount: number;
   date: string;
   description: string;
@@ -52,6 +63,21 @@ export interface BudgetSummary {
   totalAmount: number;
   budgetAmount: number;
   remainingAmount: number;
+}
+
+export interface BudgetReportSubCategory {
+  subCategoryId: number | null;
+  subCategoryName: string;
+  totalAmount: number;
+}
+
+export interface BudgetReportItem {
+  categoryId: number;
+  categoryName: string;
+  budgetAmount: number;
+  totalAmount: number;
+  remainingAmount: number;
+  subCategories: BudgetReportSubCategory[];
 }
 
 export type TransactionType = 'investment' | 'saving' | 'income';

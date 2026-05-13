@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -19,8 +19,8 @@ import {
   Stack,
   Grid,
   LinearProgress,
-  Tooltip
-} from '@mui/material';
+  Tooltip,
+} from "@mui/material";
 import {
   Search as SearchIcon,
   Add as AddIcon,
@@ -34,34 +34,41 @@ import {
   KeyboardArrowDown as ArrowDownIcon,
   Remove as RemoveIcon,
   Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import type { Expense, Category, Budget } from '../types';
-import { getExpensesByMonth, createExpense, getCategories, updateExpense, deleteExpense, getBudgetsByMonth } from '../api/client';
-import ExpenseDialog from '../components/ExpenseDialog';
-import ConfirmDialog from '../components/ConfirmDialog';
-import { format } from 'date-fns';
-import { useToast } from '../contexts/ToastContext';
+  Delete as DeleteIcon,
+} from "@mui/icons-material";
+import type { Expense, Category, Budget } from "../types";
+import {
+  getExpensesByMonth,
+  createExpense,
+  getCategories,
+  updateExpense,
+  deleteExpense,
+  getBudgetsByMonth,
+} from "../api/client";
+import ExpenseDialog from "../components/ExpenseDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
+import { format } from "date-fns";
+import { useToast } from "../contexts/ToastContext";
 
 const getCategoryIcon = (categoryName: string) => {
   switch (categoryName.toLowerCase()) {
-    case 'coffee':
+    case "coffee":
       return <CoffeeIcon />;
-    case 'rent':
-    case 'home':
+    case "rent":
+    case "home":
       return <HomeIcon />;
-    case 'groceries':
+    case "groceries":
       return <GroceriesIcon />;
-    case 'car':
+    case "car":
       return <CarIcon />;
-    case 'streaming':
+    case "streaming":
       return <StreamingIcon />;
-    case 'restaurant':
+    case "restaurant":
       return <RestaurantIcon />;
-    case 'travel':
+    case "travel":
       return <TravelIcon />;
     default:
-      return <RemoveIcon sx={{ color: 'error.main' }} />;
+      return <RemoveIcon sx={{ color: "error.main" }} />;
   }
 };
 
@@ -70,11 +77,12 @@ export default function Expenses() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [categoryMenuAnchor, setCategoryMenuAnchor] = useState<null | HTMLElement>(null);
+  const [categoryMenuAnchor, setCategoryMenuAnchor] =
+    useState<null | HTMLElement>(null);
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -83,11 +91,11 @@ export default function Expenses() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
   const [expenseForm, setExpenseForm] = useState({
-    categoryId: '',
-    amount: '',
+    categoryId: "",
+    amount: "",
     date: new Date().toISOString(),
-    description: '',
-    notes: ''
+    description: "",
+    notes: "",
   });
 
   const { showToast } = useToast();
@@ -95,16 +103,22 @@ export default function Expenses() {
   const fetchData = useCallback(async () => {
     try {
       const [expensesRes, categoriesRes, budgetsRes] = await Promise.all([
-        getExpensesByMonth(selectedDate.getFullYear(), selectedDate.getMonth() + 1),
+        getExpensesByMonth(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth() + 1,
+        ),
         getCategories(),
-        getBudgetsByMonth(selectedDate.getFullYear(), selectedDate.getMonth() + 1)
+        getBudgetsByMonth(
+          selectedDate.getFullYear(),
+          selectedDate.getMonth() + 1,
+        ),
       ]);
       setExpenses(expensesRes.data);
       setCategories(categoriesRes.data);
       setBudgets(budgetsRes.data);
     } catch (error) {
-      setError('Failed to load data');
-      console.error('Error fetching data:', error);
+      setError("Failed to load data");
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -114,59 +128,71 @@ export default function Expenses() {
     fetchData();
   }, [fetchData]);
 
-  const handleAddExpense = async (newExpense: Omit<Expense, 'id' | 'category'>) => {
+  const handleAddExpense = async (
+    newExpense: Omit<Expense, "id" | "category" | "subCategory">,
+  ) => {
     try {
       // Ensure all required fields are present and of correct type
-      if (!newExpense.categoryId || !newExpense.amount || !newExpense.description) {
-        showToast('Please fill in all required fields', 'error');
+      if (
+        !newExpense.categoryId ||
+        !newExpense.amount ||
+        !newExpense.description
+      ) {
+        showToast("Please fill in all required fields", "error");
         return;
       }
 
       // Format the data for the API
       const expenseData = {
         categoryId: Number(newExpense.categoryId),
+        subCategoryId: newExpense.subCategoryId ? Number(newExpense.subCategoryId) : undefined,
         amount: Number(newExpense.amount),
         date: new Date(newExpense.date).toISOString(),
         description: newExpense.description.trim(),
-        notes: newExpense.notes?.trim() || undefined
+        notes: newExpense.notes?.trim() || undefined,
       };
 
       // Log the request data
-      console.log('Sending expense data to API:', expenseData);
-      
+      console.log("Sending expense data to API:", expenseData);
+
       const response = await createExpense(expenseData);
-      console.log('API Response:', response);
-      
+      console.log("API Response:", response);
+
       setAddDialogOpen(false);
       fetchData();
-      showToast('Expense added successfully', 'success');
+      showToast("Expense added successfully", "success");
     } catch (error: any) {
-      console.error('Error creating expense:', error);
-      console.error('Error response:', error.response?.data);
-      
+      console.error("Error creating expense:", error);
+      console.error("Error response:", error.response?.data);
+
       if (error.response?.data?.errors) {
         // Handle validation errors from the API
         const errorMessages = Object.values(error.response.data.errors).flat();
-        showToast(`Validation error: ${errorMessages.join(', ')}`, 'error');
+        showToast(`Validation error: ${errorMessages.join(", ")}`, "error");
       } else if (error.response?.data?.message) {
         // Handle specific error message from the API
-        showToast(error.response.data.message, 'error');
+        showToast(error.response.data.message, "error");
       } else {
-        showToast('Failed to create expense. Please check all fields are filled correctly.', 'error');
+        showToast(
+          "Failed to create expense. Please check all fields are filled correctly.",
+          "error",
+        );
       }
     }
   };
 
-  const handleEditSave = async (updatedExpense: Omit<Expense, 'id' | 'category'>) => {
+  const handleEditSave = async (
+    updatedExpense: Omit<Expense, "id" | "category" | "subCategory">,
+  ) => {
     if (!editingExpense) return;
     try {
       await updateExpense(editingExpense.id, updatedExpense);
       setEditDialogOpen(false);
       fetchData();
-      showToast('Expense updated successfully', 'success');
+      showToast("Expense updated successfully", "success");
     } catch (error) {
-      console.error('Error updating expense:', error);
-      showToast('Failed to update expense', 'error');
+      console.error("Error updating expense:", error);
+      showToast("Failed to update expense", "error");
     }
   };
 
@@ -176,70 +202,93 @@ export default function Expenses() {
       await deleteExpense(deletingExpense.id);
       setDeleteDialogOpen(false);
       fetchData();
-      showToast('Expense deleted successfully', 'success');
+      showToast("Expense deleted successfully", "success");
     } catch (error) {
-      console.error('Error deleting expense:', error);
-      showToast('Failed to delete expense', 'error');
+      console.error("Error deleting expense:", error);
+      showToast("Failed to delete expense", "error");
     }
   };
 
-  const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = searchTerm === '' || 
+  const filteredExpenses = expenses.filter((expense) => {
+    const matchesSearch =
+      searchTerm === "" ||
       expense.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategories.length === 0 || 
+    const matchesCategory =
+      selectedCategories.length === 0 ||
       (expense.category && selectedCategories.includes(expense.category.name));
     return matchesSearch && matchesCategory;
   });
 
   // Group expenses by date
-  const groupedExpenses = filteredExpenses.reduce((groups: Record<string, Expense[]>, expense) => {
-    const date = format(new Date(expense.date), 'yyyy-MM-dd');
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(expense);
-    return groups;
-  }, {});
+  const groupedExpenses = filteredExpenses.reduce(
+    (groups: Record<string, Expense[]>, expense) => {
+      const date = format(new Date(expense.date), "yyyy-MM-dd");
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(expense);
+      return groups;
+    },
+    {},
+  );
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-UG', {
-      style: 'decimal',
-      minimumFractionDigits: 2
+    return new Intl.NumberFormat("en-UG", {
+      style: "decimal",
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
   // Calculate total spent per category
-  const categorySpending = expenses.reduce((acc, expense) => {
-    if (expense.category) {
-      acc[expense.category.id] = (acc[expense.category.id] || 0) + Math.abs(expense.amount);
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  const categorySpending = expenses.reduce(
+    (acc, expense) => {
+      if (expense.category) {
+        acc[expense.category.id] =
+          (acc[expense.category.id] || 0) + Math.abs(expense.amount);
+      }
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Summary Section */}
-      <Paper 
+      <Paper
         elevation={0}
-        sx={{ 
-          p: 3, 
+        sx={{
+          p: 3,
           borderRadius: 0,
           borderBottom: 1,
-          borderColor: 'divider'
+          borderColor: "divider",
         }}
       >
-        <Typography variant="h5" gutterBottom>Budget Summary</Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5" gutterBottom>
+          Budget Summary
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2,
+          }}
+        >
           <Typography variant="h4">
-            {format(selectedDate, 'MMMM yyyy')}
+            {format(selectedDate, "MMMM yyyy")}
           </Typography>
         </Box>
 
@@ -248,33 +297,42 @@ export default function Expenses() {
             const spent = categorySpending[budget.categoryId] || 0;
             const remaining = budget.amount - spent;
             const progress = (spent / budget.amount) * 100;
-            
+
             return (
               <Grid item xs={12} sm={6} md={4} key={budget.id}>
-                <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Box
+                  sx={{ p: 2, bgcolor: "background.paper", borderRadius: 1 }}
+                >
                   <Typography variant="subtitle1" gutterBottom>
                     {budget.category?.name}
                   </Typography>
                   <Box sx={{ mb: 1 }}>
-                    <LinearProgress 
-                      variant="determinate" 
+                    <LinearProgress
+                      variant="determinate"
                       value={Math.min(progress, 100)}
-                      color={progress > 100 ? 'error' : 'primary'}
+                      color={progress > 100 ? "error" : "primary"}
                       sx={{ height: 8, borderRadius: 4 }}
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                    }}
+                  >
                     <Tooltip title="Amount Spent">
                       <Typography variant="body2" color="error">
                         {formatCurrency(spent)}
                       </Typography>
                     </Tooltip>
-                    <Typography 
-                      variant="body2" 
-                      color={remaining < 0 ? 'error' : 'success.main'}
-                      sx={{ fontWeight: 'medium' }}
+                    <Typography
+                      variant="body2"
+                      color={remaining < 0 ? "error" : "success.main"}
+                      sx={{ fontWeight: "medium" }}
                     >
-                      {formatCurrency(Math.abs(remaining))} {remaining < 0 ? 'over' : 'left'}
+                      {formatCurrency(Math.abs(remaining))}{" "}
+                      {remaining < 0 ? "over" : "left"}
                     </Typography>
                   </Box>
                 </Box>
@@ -285,22 +343,31 @@ export default function Expenses() {
       </Paper>
 
       {/* Transactions Section */}
-      <Paper 
-        elevation={0} 
-        sx={{ 
+      <Paper
+        elevation={0}
+        sx={{
           flex: 1,
           borderRadius: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%'
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
         }}
       >
-        <Box sx={{ 
-          p: 3,
-          borderBottom: 1,
-          borderColor: 'divider'
-        }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box
+          sx={{
+            p: 3,
+            borderBottom: 1,
+            borderColor: "divider",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
             <Typography variant="h6">
               Transactions
               <Typography variant="body2" color="text.secondary">
@@ -308,7 +375,7 @@ export default function Expenses() {
               </Typography>
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <Button
                 size="small"
                 variant="outlined"
@@ -346,40 +413,46 @@ export default function Expenses() {
 
           {selectedCategories.length > 0 && (
             <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-              {selectedCategories.map(category => (
+              {selectedCategories.map((category) => (
                 <Chip
                   key={category}
                   label={category}
-                  onDelete={() => setSelectedCategories(prev => prev.filter(c => c !== category))}
+                  onDelete={() =>
+                    setSelectedCategories((prev) =>
+                      prev.filter((c) => c !== category),
+                    )
+                  }
                 />
               ))}
             </Stack>
           )}
         </Box>
 
-        <Box sx={{ 
-          flex: 1, 
-          overflowY: 'auto',
-          px: 3,
-          py: 2,
-          width: '100%'
-        }}>
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            px: 3,
+            py: 2,
+            width: "100%",
+          }}
+        >
           <List>
             {Object.entries(groupedExpenses).map(([date, dayExpenses]) => (
               <Box key={date}>
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                  {format(new Date(date), 'EEEE, MMMM d')}
+                  {format(new Date(date), "EEEE, MMMM d")}
                 </Typography>
                 {dayExpenses.map((expense) => (
                   <ListItem
                     key={expense.id}
                     sx={{
                       borderRadius: 1,
-                      '&:hover': { bgcolor: 'action.hover' },
+                      "&:hover": { bgcolor: "action.hover" },
                     }}
                   >
                     <ListItemIcon>
-                      {getCategoryIcon(expense.category?.name || '')}
+                      {getCategoryIcon(expense.category?.name || "")}
                     </ListItemIcon>
                     <ListItemText
                       primary={expense.description}
@@ -387,11 +460,18 @@ export default function Expenses() {
                         <>
                           <Typography variant="body2" component="span">
                             {expense.category?.name}
+                            {expense.subCategory && (
+                              <> &rsaquo; {expense.subCategory.name}</>
+                            )}
                           </Typography>
                           {expense.notes && (
                             <>
                               <br />
-                              <Typography variant="caption" component="span" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                component="span"
+                                color="text.secondary"
+                              >
                                 {expense.notes}
                               </Typography>
                             </>
@@ -399,16 +479,16 @@ export default function Expenses() {
                         </>
                       }
                     />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <Typography
                         variant="body2"
                         color="error"
-                        sx={{ fontWeight: 'medium' }}
+                        sx={{ fontWeight: "medium" }}
                       >
                         {formatCurrency(Math.abs(expense.amount))}
                       </Typography>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         onClick={() => {
                           setEditingExpense(expense);
                           setEditDialogOpen(true);
@@ -416,7 +496,7 @@ export default function Expenses() {
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton 
+                      <IconButton
                         size="small"
                         onClick={() => {
                           setDeletingExpense(expense);
@@ -440,21 +520,19 @@ export default function Expenses() {
         open={Boolean(categoryMenuAnchor)}
         onClose={() => setCategoryMenuAnchor(null)}
       >
-        {categories.map(category => (
+        {categories.map((category) => (
           <MenuItem
             key={category.id}
             onClick={() => {
-              setSelectedCategories(prev => 
-                prev.includes(category.name) 
-                  ? prev.filter(c => c !== category.name)
-                  : [...prev, category.name]
+              setSelectedCategories((prev) =>
+                prev.includes(category.name)
+                  ? prev.filter((c) => c !== category.name)
+                  : [...prev, category.name],
               );
               setCategoryMenuAnchor(null);
             }}
           >
-            <ListItemIcon>
-              {getCategoryIcon(category.name)}
-            </ListItemIcon>
+            <ListItemIcon>{getCategoryIcon(category.name)}</ListItemIcon>
             <ListItemText primary={category.name} />
           </MenuItem>
         ))}
@@ -493,4 +571,4 @@ export default function Expenses() {
       )}
     </Box>
   );
-} 
+}

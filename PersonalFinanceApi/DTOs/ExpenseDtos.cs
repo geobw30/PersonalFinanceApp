@@ -11,6 +11,8 @@ public class CreateExpenseDto
     [Required]
     public int CategoryId { get; set; }
 
+    public int? SubCategoryId { get; set; }
+
     [Required]
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]
     public decimal Amount { get; set; }
@@ -30,6 +32,8 @@ public class UpdateExpenseDto
 
     [Required]
     public int CategoryId { get; set; }
+
+    public int? SubCategoryId { get; set; }
 
     [Required]
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0")]

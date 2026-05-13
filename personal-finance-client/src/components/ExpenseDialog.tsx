@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,58 +10,91 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Box
-} from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import type { Expense, Category } from '../types';
+  Box,
+} from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import type { Expense, Category, SubCategory } from "../types";
+import { getSubCategoriesByCategory } from "../api/client";
 
 interface ExpenseDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (expense: Omit<Expense, 'id' | 'category'>) => void;
+  onSave: (expense: Omit<Expense, "id" | "category" | "subCategory">) => void;
   categories: Category[];
-  mode: 'add' | 'edit';
+  mode: "add" | "edit";
   initialExpense?: Expense | null;
 }
 
-export default function ExpenseDialog({ 
-  open, 
-  onClose, 
-  onSave, 
+export default function ExpenseDialog({
+  open,
+  onClose,
+  onSave,
   categories,
   mode,
-  initialExpense 
+  initialExpense,
 }: ExpenseDialogProps) {
   const [expenseData, setExpenseData] = useState({
-    categoryId: initialExpense?.categoryId || '',
-    amount: initialExpense?.amount?.toString() || '',
+    categoryId: initialExpense?.categoryId || ("" as number | ""),
+    subCategoryId: initialExpense?.subCategoryId || ("" as number | ""),
+    amount: initialExpense?.amount?.toString() || "",
     date: initialExpense?.date || new Date().toISOString(),
-    description: initialExpense?.description || '',
-    notes: initialExpense?.notes || ''
+    description: initialExpense?.description || "",
+    notes: initialExpense?.notes || "",
   });
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
 
   // Reset form data when dialog opens/closes or initialExpense changes
   useEffect(() => {
     if (open) {
       setExpenseData({
-        categoryId: initialExpense?.categoryId || '',
-        amount: initialExpense?.amount?.toString() || '',
+        categoryId: initialExpense?.categoryId || "",
+        subCategoryId: initialExpense?.subCategoryId || "",
+        amount: initialExpense?.amount?.toString() || "",
         date: initialExpense?.date || new Date().toISOString(),
-        description: initialExpense?.description || '',
-        notes: initialExpense?.notes || ''
+        description: initialExpense?.description || "",
+        notes: initialExpense?.notes || "",
       });
+      if (initialExpense?.categoryId) {
+        loadSubCategories(initialExpense.categoryId);
+      } else {
+        setSubCategories([]);
+      }
     }
   }, [open, initialExpense]);
 
+  const loadSubCategories = async (categoryId: number) => {
+    try {
+      const { data } = await getSubCategoriesByCategory(categoryId);
+      setSubCategories(data);
+    } catch {
+      setSubCategories([]);
+    }
+  };
+
+  const handleCategoryChange = (categoryId: number | "") => {
+    setExpenseData({ ...expenseData, categoryId, subCategoryId: "" });
+    if (categoryId) {
+      loadSubCategories(categoryId as number);
+    } else {
+      setSubCategories([]);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!expenseData.categoryId || !expenseData.amount || !expenseData.description) {
+
+    if (
+      !expenseData.categoryId ||
+      !expenseData.amount ||
+      !expenseData.description
+    ) {
       return;
     }
 
-    const categoryIdNumber = parseInt(expenseData.categoryId as string, 10);
+    const categoryIdNumber = parseInt(
+      expenseData.categoryId as unknown as string,
+      10,
+    );
     const amountNumber = parseFloat(expenseData.amount);
 
     if (isNaN(categoryIdNumber) || isNaN(amountNumber)) {
@@ -70,34 +103,41 @@ export default function ExpenseDialog({
 
     onSave({
       categoryId: categoryIdNumber,
+      subCategoryId: expenseData.subCategoryId
+        ? Number(expenseData.subCategoryId)
+        : undefined,
       amount: amountNumber,
       date: expenseData.date,
       description: expenseData.description.trim(),
-      notes: expenseData.notes.trim() || undefined
+      notes: expenseData.notes.trim() || undefined,
     });
 
-    // Reset form
     setExpenseData({
-      categoryId: '',
-      amount: '',
+      categoryId: "",
+      subCategoryId: "",
+      amount: "",
       date: new Date().toISOString(),
-      description: '',
-      notes: ''
+      description: "",
+      notes: "",
     });
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{mode === 'add' ? 'Add New Expense' : 'Edit Expense'}</DialogTitle>
+      <DialogTitle>
+        {mode === "add" ? "Add New Expense" : "Edit Expense"}
+      </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <FormControl fullWidth required>
               <InputLabel>Category</InputLabel>
               <Select
                 value={expenseData.categoryId}
                 label="Category"
-                onChange={(e) => setExpenseData({ ...expenseData, categoryId: e.target.value })}
+                onChange={(e) =>
+                  handleCategoryChange(e.target.value as number | "")
+                }
               >
                 {categories.map((category) => (
                   <MenuItem key={category.id} value={category.id}>
@@ -107,12 +147,39 @@ export default function ExpenseDialog({
               </Select>
             </FormControl>
 
+            {subCategories.length > 0 && (
+              <FormControl fullWidth>
+                <InputLabel>Sub Category</InputLabel>
+                <Select
+                  value={expenseData.subCategoryId}
+                  label="Sub Category"
+                  onChange={(e) =>
+                    setExpenseData({
+                      ...expenseData,
+                      subCategoryId: e.target.value as number | "",
+                    })
+                  }
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  {subCategories.map((sc) => (
+                    <MenuItem key={sc.id} value={sc.id}>
+                      {sc.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
             <TextField
               label="Amount (UGX)"
               type="number"
               required
               value={expenseData.amount}
-              onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })}
+              onChange={(e) =>
+                setExpenseData({ ...expenseData, amount: e.target.value })
+              }
               inputProps={{ min: "0", step: "1" }}
             />
 
@@ -121,11 +188,14 @@ export default function ExpenseDialog({
               value={new Date(expenseData.date)}
               onChange={(newValue) => {
                 if (newValue) {
-                  setExpenseData({ ...expenseData, date: newValue.toISOString() });
+                  setExpenseData({
+                    ...expenseData,
+                    date: newValue.toISOString(),
+                  });
                 }
               }}
               slotProps={{
-                textField: { fullWidth: true }
+                textField: { fullWidth: true },
               }}
             />
 
@@ -133,7 +203,9 @@ export default function ExpenseDialog({
               label="Description"
               required
               value={expenseData.description}
-              onChange={(e) => setExpenseData({ ...expenseData, description: e.target.value })}
+              onChange={(e) =>
+                setExpenseData({ ...expenseData, description: e.target.value })
+              }
             />
 
             <TextField
@@ -141,17 +213,21 @@ export default function ExpenseDialog({
               multiline
               rows={2}
               value={expenseData.notes}
-              onChange={(e) => setExpenseData({ ...expenseData, notes: e.target.value })}
+              onChange={(e) =>
+                setExpenseData({ ...expenseData, notes: e.target.value })
+              }
             />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} size="small">Cancel</Button>
+          <Button onClick={onClose} size="small">
+            Cancel
+          </Button>
           <Button type="submit" variant="contained" size="small">
-            {mode === 'add' ? 'Add' : 'Save'}
+            {mode === "add" ? "Add" : "Save"}
           </Button>
         </DialogActions>
       </form>
     </Dialog>
   );
-} 
+}
