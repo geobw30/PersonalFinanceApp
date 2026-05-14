@@ -91,8 +91,12 @@ function CategoryRow({
             </Typography>
           </Box>
         </TableCell>
-        <TableCell align="right" sx={{ fontSize: 14 }}>{formatCurrency(item.budgetAmount)}</TableCell>
-        <TableCell align="right" sx={{ fontSize: 14 }}>{formatCurrency(item.totalAmount)}</TableCell>
+        <TableCell align="right" sx={{ fontSize: 14 }}>
+          {formatCurrency(item.budgetAmount)}
+        </TableCell>
+        <TableCell align="right" sx={{ fontSize: 14 }}>
+          {formatCurrency(item.totalAmount)}
+        </TableCell>
         <TableCell align="right">
           <Chip
             label={`${over ? "▲" : "▼"} ${formatCurrency(Math.abs(item.remainingAmount))}`}
@@ -167,7 +171,10 @@ export default function Reports() {
     setError("");
     Promise.all([
       getBudgetReport(selectedDate.getFullYear(), selectedDate.getMonth() + 1),
-      getExpensesByMonth(selectedDate.getFullYear(), selectedDate.getMonth() + 1),
+      getExpensesByMonth(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + 1,
+      ),
     ])
       .then(([{ data: reportData }, { data: expenseData }]) => {
         if (isMounted) {
@@ -206,9 +213,19 @@ export default function Reports() {
     .slice(0, 12);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, width: "100%", pb: 4 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 3,
+        width: "100%",
+        pb: 4,
+      }}
+    >
       {/* Header */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+      <Box
+        sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}
+      >
         <Typography variant="h5" component="h1" flexGrow={1} fontWeight="bold">
           Reports — Budget vs Actual
         </Typography>
@@ -222,7 +239,12 @@ export default function Reports() {
       </Box>
 
       {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="40vh">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="40vh"
+        >
           <CircularProgress />
         </Box>
       ) : error ? (
@@ -232,8 +254,16 @@ export default function Reports() {
           {/* Summary cards */}
           <Grid container spacing={2}>
             {[
-              { label: "Total Budget", value: totalBudget, color: "text.primary" },
-              { label: "Total Spent", value: totalActual, color: "text.primary" },
+              {
+                label: "Total Budget",
+                value: totalBudget,
+                color: "text.primary",
+              },
+              {
+                label: "Total Spent",
+                value: totalActual,
+                color: "text.primary",
+              },
               {
                 label: totalVariance >= 0 ? "Remaining" : "Over Budget",
                 value: Math.abs(totalVariance),
@@ -242,7 +272,11 @@ export default function Reports() {
             ].map(({ label, value, color }) => (
               <Grid item xs={12} sm={4} key={label}>
                 <Paper elevation={2} sx={{ p: 3, textAlign: "center" }}>
-                  <Typography variant="body1" color="text.secondary" gutterBottom>
+                  <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    gutterBottom
+                  >
                     {label}
                   </Typography>
                   <Typography variant="h5" color={color} fontWeight="bold">
@@ -266,7 +300,12 @@ export default function Reports() {
               <ResponsiveContainer width="100%" height="88%">
                 <BarChart
                   data={report}
-                  margin={{ top: 10, right: 30, left: 10, bottom: isMobile ? 70 : 10 }}
+                  margin={{
+                    top: 10,
+                    right: 30,
+                    left: 10,
+                    bottom: isMobile ? 70 : 10,
+                  }}
                   barCategoryGap="30%"
                 >
                   <CartesianGrid strokeDasharray="3 3" />
@@ -284,12 +323,25 @@ export default function Reports() {
                     width={90}
                   />
                   <Tooltip
-                    formatter={(v: number, name: string) => [formatCurrency(v), name]}
+                    formatter={(v: number, name: string) => [
+                      formatCurrency(v),
+                      name,
+                    ]}
                     contentStyle={{ fontSize: 13 }}
                   />
                   <Legend wrapperStyle={{ fontSize: 13 }} />
-                  <Bar dataKey="budgetAmount" name="Budget" fill={theme.palette.primary.main} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="totalAmount" name="Actual" fill={theme.palette.secondary.main} radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="budgetAmount"
+                    name="Budget"
+                    fill={theme.palette.primary.main}
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="totalAmount"
+                    name="Actual"
+                    fill={theme.palette.secondary.main}
+                    radius={[4, 4, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -320,7 +372,9 @@ export default function Reports() {
                         <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v: number) => [formatCurrency(v), "Spent"]} />
+                    <Tooltip
+                      formatter={(v: number) => [formatCurrency(v), "Spent"]}
+                    />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -333,8 +387,13 @@ export default function Reports() {
                   Top Sub Category Spending
                 </Typography>
                 {subCatChartData.length === 0 ? (
-                  <Typography align="center" color="text.secondary" sx={{ mt: 6 }}>
-                    No sub category data — assign sub categories to expenses to see this chart.
+                  <Typography
+                    align="center"
+                    color="text.secondary"
+                    sx={{ mt: 6 }}
+                  >
+                    No sub category data — assign sub categories to expenses to
+                    see this chart.
                   </Typography>
                 ) : (
                   <ResponsiveContainer width="100%" height="88%">
@@ -356,7 +415,9 @@ export default function Reports() {
                         width={isMobile ? 130 : 180}
                         tick={{ fontSize: 11 }}
                       />
-                      <Tooltip formatter={(v: number) => [formatCurrency(v), "Spent"]} />
+                      <Tooltip
+                        formatter={(v: number) => [formatCurrency(v), "Spent"]}
+                      />
                       <Bar dataKey="amount" name="Spent" radius={[0, 4, 4, 0]}>
                         {subCatChartData.map((_, idx) => (
                           <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
@@ -373,8 +434,14 @@ export default function Reports() {
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Budget vs Actual Detail
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                (click ▶ to expand sub categories — only categories with subcategory-tagged expenses show the expand arrow)
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 1 }}
+              >
+                (click ▶ to expand sub categories — only categories with
+                subcategory-tagged expenses show the expand arrow)
               </Typography>
             </Typography>
             <TableContainer>
@@ -382,41 +449,82 @@ export default function Reports() {
                 <TableHead>
                   <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
                     <TableCell sx={{ width: 48 }} />
-                    <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Category</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>Budget</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>Actual</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>Variance</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>Usage&nbsp;%</TableCell>
+                    <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                      Category
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ fontWeight: "bold", fontSize: 14 }}
+                    >
+                      Budget
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ fontWeight: "bold", fontSize: 14 }}
+                    >
+                      Actual
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ fontWeight: "bold", fontSize: 14 }}
+                    >
+                      Variance
+                    </TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{ fontWeight: "bold", fontSize: 14 }}
+                    >
+                      Usage&nbsp;%
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {report.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} align="center" sx={{ color: "text.secondary", py: 5, fontSize: 14 }}>
+                      <TableCell
+                        colSpan={6}
+                        align="center"
+                        sx={{ color: "text.secondary", py: 5, fontSize: 14 }}
+                      >
                         No data for this period.
                       </TableCell>
                     </TableRow>
                   ) : (
                     <>
                       {report.map((item, idx) => (
-                        <CategoryRow key={item.categoryId} item={item} index={idx} />
+                        <CategoryRow
+                          key={item.categoryId}
+                          item={item}
+                          index={idx}
+                        />
                       ))}
                       <TableRow sx={{ bgcolor: theme.palette.action.selected }}>
                         <TableCell />
-                        <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Total</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                          Total
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{ fontWeight: "bold", fontSize: 14 }}
+                        >
                           {formatCurrency(totalBudget)}
                         </TableCell>
-                        <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        <TableCell
+                          align="right"
+                          sx={{ fontWeight: "bold", fontSize: 14 }}
+                        >
                           {formatCurrency(totalActual)}
                         </TableCell>
                         <TableCell align="right">
                           <Typography
                             fontWeight="bold"
                             fontSize={14}
-                            color={totalVariance >= 0 ? "success.main" : "error.main"}
+                            color={
+                              totalVariance >= 0 ? "success.main" : "error.main"
+                            }
                           >
-                            {totalVariance >= 0 ? "▼" : "▲"} {formatCurrency(Math.abs(totalVariance))}
+                            {totalVariance >= 0 ? "▼" : "▲"}{" "}
+                            {formatCurrency(Math.abs(totalVariance))}
                           </Typography>
                         </TableCell>
                         <TableCell />
@@ -432,8 +540,14 @@ export default function Reports() {
           <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Expense Lines
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                ({expenses.length} transaction{expenses.length !== 1 ? "s" : ""})
+              <Typography
+                component="span"
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 1 }}
+              >
+                ({expenses.length} transaction{expenses.length !== 1 ? "s" : ""}
+                )
               </Typography>
             </Typography>
             <Divider sx={{ mb: 2 }} />
@@ -446,12 +560,27 @@ export default function Reports() {
                 <Table>
                   <TableHead>
                     <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
-                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Date</TableCell>
-                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Category</TableCell>
-                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Sub Category</TableCell>
-                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Description</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>Amount</TableCell>
-                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>Notes</TableCell>
+                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        Date
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        Category
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        Sub Category
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        Description
+                      </TableCell>
+                      <TableCell
+                        align="right"
+                        sx={{ fontWeight: "bold", fontSize: 14 }}
+                      >
+                        Amount
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                        Notes
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -461,25 +590,48 @@ export default function Reports() {
                           {format(new Date(exp.date), "dd MMM yyyy")}
                         </TableCell>
                         <TableCell sx={{ fontSize: 13 }}>
-                          {(exp as any).categoryName || (exp as any).category?.name || ""}
+                          {(exp as any).categoryName ||
+                            (exp as any).category?.name ||
+                            ""}
                         </TableCell>
-                        <TableCell sx={{ fontSize: 13, color: "text.secondary" }}>
-                          {(exp as any).subCategoryName || exp.subCategory?.name || "—"}
+                        <TableCell
+                          sx={{ fontSize: 13, color: "text.secondary" }}
+                        >
+                          {(exp as any).subCategoryName ||
+                            exp.subCategory?.name ||
+                            "—"}
                         </TableCell>
-                        <TableCell sx={{ fontSize: 13 }}>{exp.description}</TableCell>
-                        <TableCell align="right" sx={{ fontSize: 13, fontWeight: "medium", whiteSpace: "nowrap" }}>
+                        <TableCell sx={{ fontSize: 13 }}>
+                          {exp.description}
+                        </TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{
+                            fontSize: 13,
+                            fontWeight: "medium",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {formatCurrency(exp.amount)}
                         </TableCell>
-                        <TableCell sx={{ fontSize: 13, color: "text.secondary" }}>
+                        <TableCell
+                          sx={{ fontSize: 13, color: "text.secondary" }}
+                        >
                           {exp.notes || ""}
                         </TableCell>
                       </TableRow>
                     ))}
                     <TableRow sx={{ bgcolor: theme.palette.action.selected }}>
-                      <TableCell colSpan={4} sx={{ fontWeight: "bold", fontSize: 14 }}>
+                      <TableCell
+                        colSpan={4}
+                        sx={{ fontWeight: "bold", fontSize: 14 }}
+                      >
                         Total
                       </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: "bold", fontSize: 14 }}>
+                      <TableCell
+                        align="right"
+                        sx={{ fontWeight: "bold", fontSize: 14 }}
+                      >
                         {formatCurrency(totalExpenses)}
                       </TableCell>
                       <TableCell />
@@ -494,4 +646,3 @@ export default function Reports() {
     </Box>
   );
 }
-
