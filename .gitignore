@@ -123,3 +123,4 @@ Generated\ Files/
 .eslintcache
 .DS_Store
 Thumbs.db
+*.lscache

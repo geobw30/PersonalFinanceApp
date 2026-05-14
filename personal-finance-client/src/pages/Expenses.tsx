@@ -145,7 +145,9 @@ export default function Expenses() {
       // Format the data for the API
       const expenseData = {
         categoryId: Number(newExpense.categoryId),
-        subCategoryId: newExpense.subCategoryId ? Number(newExpense.subCategoryId) : undefined,
+        subCategoryId: newExpense.subCategoryId
+          ? Number(newExpense.subCategoryId)
+          : undefined,
         amount: Number(newExpense.amount),
         date: new Date(newExpense.date).toISOString(),
         description: newExpense.description.trim(),
