@@ -58,6 +58,14 @@ export interface BudgetReportItem {
   subCategories: BudgetReportSubCategory[];
 }
 
+export type MainTabParamList = {
+  Home: undefined;
+  Expenses: undefined;
+  Budgets: undefined;
+  Reports: undefined;
+  Categories: undefined;
+};
+
 export type RootStackParamList = {
   MainTabs: undefined;
   AddBudget: undefined;
