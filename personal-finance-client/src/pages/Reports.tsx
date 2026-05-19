@@ -32,7 +32,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek } from "date-fns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { getBudgetReport, getExpensesByMonth } from "../api/client";
 import type { BudgetReportItem, Expense } from "../types";
@@ -48,6 +48,83 @@ const COLORS = [
   "#ffa000",
 ];
 const formatCurrency = (amount: number) => amount.toLocaleString("en-UG");
+
+// Calculate weekly expense breakdown
+function getWeeklyBreakdown(expenses: Expense[], year: number, month: number) {
+  const weeklyData: Record<
+    string,
+    { week: string; start: Date; end: Date; total: number }
+  > = {};
+
+  expenses.forEach((exp) => {
+    const expDate = new Date(exp.date);
+    if (expDate.getFullYear() === year && expDate.getMonth() + 1 === month) {
+      const start = startOfWeek(expDate, { weekStartsOn: 1 });
+      const end = endOfWeek(expDate, { weekStartsOn: 1 });
+      const weekKey = format(start, "MMM dd");
+
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {
+          week: `Week of ${weekKey}`,
+          start,
+          end,
+          total: 0,
+        };
+      }
+      weeklyData[weekKey].total += exp.amount;
+    }
+  });
+
+  return Object.values(weeklyData)
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+    .map(({ week, total }) => ({
+      week,
+      total,
+    }));
+}
+
+// Calculate weekly breakdown by category
+function getWeeklyByCategory(
+  expenses: Expense[],
+  year: number,
+  month: number,
+  categoryNamesById: Record<number, string>,
+) {
+  const weeklyData: Record<
+    string,
+    {
+      week: string;
+      start: Date;
+      [key: string]: string | Date | number;
+    }
+  > = {};
+
+  expenses.forEach((exp) => {
+    const expDate = new Date(exp.date);
+    if (expDate.getFullYear() === year && expDate.getMonth() + 1 === month) {
+      const start = startOfWeek(expDate, { weekStartsOn: 1 });
+      const weekKey = format(start, "MMM dd");
+      const categoryName =
+        (exp as any).categoryName ||
+        exp.category?.name ||
+        categoryNamesById[exp.categoryId] ||
+        `Category ${exp.categoryId}`;
+
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {
+          week: weekKey,
+          start,
+        };
+      }
+      weeklyData[weekKey][categoryName] =
+        ((weeklyData[weekKey][categoryName] as number) || 0) + exp.amount;
+    }
+  });
+
+  return Object.values(weeklyData).sort(
+    (a, b) => (a.start as Date).getTime() - (b.start as Date).getTime(),
+  );
+}
 
 function CategoryRow({
   item,
@@ -287,102 +364,71 @@ export default function Reports() {
             ))}
           </Grid>
 
-          {/* Bar chart: Budget vs Actual — full width */}
-          <Paper elevation={2} sx={{ p: 3, height: isMobile ? 320 : 420 }}>
-            <Typography variant="h6" gutterBottom>
-              Budget vs Actual by Category
-            </Typography>
-            {report.length === 0 ? (
-              <Typography align="center" color="text.secondary" sx={{ mt: 6 }}>
-                No data for this period.
-              </Typography>
-            ) : (
-              <ResponsiveContainer width="100%" height="88%">
-                <BarChart
-                  data={report}
-                  margin={{
-                    top: 10,
-                    right: 30,
-                    left: 10,
-                    bottom: isMobile ? 70 : 10,
-                  }}
-                  barCategoryGap="30%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="categoryName"
-                    tick={{ fontSize: isMobile ? 11 : 13 }}
-                    angle={isMobile ? -40 : 0}
-                    textAnchor={isMobile ? "end" : "middle"}
-                    interval={0}
-                    height={isMobile ? 80 : 35}
-                  />
-                  <YAxis
-                    tickFormatter={(v) => v.toLocaleString("en-UG")}
-                    tick={{ fontSize: 12 }}
-                    width={90}
-                  />
-                  <Tooltip
-                    formatter={(v: number, name: string) => [
-                      formatCurrency(v),
-                      name,
-                    ]}
-                    contentStyle={{ fontSize: 13 }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 13 }} />
-                  <Bar
-                    dataKey="budgetAmount"
-                    name="Budget"
-                    fill={theme.palette.primary.main}
-                    radius={[4, 4, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="totalAmount"
-                    name="Actual"
-                    fill={theme.palette.secondary.main}
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </Paper>
-
-          {/* Pie + Sub category bar side by side */}
+          {/* Budget vs Actual + Top Sub Category side by side */}
           <Grid container spacing={2}>
-            <Grid item xs={12} md={5}>
-              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 300 : 380 }}>
+            <Grid item xs={12} md={7}>
+              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 320 : 420 }}>
                 <Typography variant="h6" gutterBottom>
-                  Spending by Category
+                  Budget vs Actual by Category
                 </Typography>
-                <ResponsiveContainer width="100%" height="88%">
-                  <PieChart>
-                    <Pie
+                {report.length === 0 ? (
+                  <Typography align="center" color="text.secondary" sx={{ mt: 6 }}>
+                    No data for this period.
+                  </Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height="88%">
+                    <BarChart
                       data={report}
-                      dataKey="totalAmount"
-                      nameKey="categoryName"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={isMobile ? 80 : 110}
-                      label={({ name, percent }) =>
-                        `${name}: ${(percent * 100).toFixed(0)}%`
-                      }
-                      labelLine
+                      margin={{
+                        top: 10,
+                        right: 30,
+                        left: 10,
+                        bottom: isMobile ? 70 : 10,
+                      }}
+                      barCategoryGap="30%"
                     >
-                      {report.map((_, idx) => (
-                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v: number) => [formatCurrency(v), "Spent"]}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="categoryName"
+                        tick={{ fontSize: isMobile ? 11 : 13 }}
+                        angle={isMobile ? -40 : 0}
+                        textAnchor={isMobile ? "end" : "middle"}
+                        interval={0}
+                        height={isMobile ? 80 : 35}
+                      />
+                      <YAxis
+                        tickFormatter={(v) => v.toLocaleString("en-UG")}
+                        tick={{ fontSize: 12 }}
+                        width={90}
+                      />
+                      <Tooltip
+                        formatter={(v: number, name: string) => [
+                          formatCurrency(v),
+                          name,
+                        ]}
+                        contentStyle={{ fontSize: 13 }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 13 }} />
+                      <Bar
+                        dataKey="budgetAmount"
+                        name="Budget"
+                        fill={theme.palette.primary.main}
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="totalAmount"
+                        name="Actual"
+                        fill={theme.palette.secondary.main}
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </Paper>
             </Grid>
 
-            <Grid item xs={12} md={7}>
-              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 320 : 380 }}>
+            <Grid item xs={12} md={5}>
+              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 320 : 420 }}>
                 <Typography variant="h6" gutterBottom>
                   Top Sub Category Spending
                 </Typography>
@@ -430,111 +476,313 @@ export default function Reports() {
             </Grid>
           </Grid>
 
-          {/* Budget vs Actual detail table — expandable subcategory rows */}
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Budget vs Actual Detail
-              <Typography
-                component="span"
-                variant="caption"
-                color="text.secondary"
-                sx={{ ml: 1 }}
-              >
-                (click ▶ to expand sub categories — only categories with
-                subcategory-tagged expenses show the expand arrow)
-              </Typography>
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
-                    <TableCell sx={{ width: 48 }} />
-                    <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
-                      Category
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", fontSize: 14 }}
+          {/* Pie + Weekly Breakdown side by side */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={5}>
+              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 300 : 380 }}>
+                <Typography variant="h6" gutterBottom>
+                  Spending by Category
+                </Typography>
+                <ResponsiveContainer width="100%" height="88%">
+                  <PieChart>
+                    <Pie
+                      data={report}
+                      dataKey="totalAmount"
+                      nameKey="categoryName"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={isMobile ? 80 : 110}
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                      }
+                      labelLine
                     >
-                      Budget
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", fontSize: 14 }}
-                    >
-                      Actual
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", fontSize: 14 }}
-                    >
-                      Variance
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{ fontWeight: "bold", fontSize: 14 }}
-                    >
-                      Usage&nbsp;%
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {report.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        align="center"
-                        sx={{ color: "text.secondary", py: 5, fontSize: 14 }}
-                      >
-                        No data for this period.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <>
-                      {report.map((item, idx) => (
-                        <CategoryRow
-                          key={item.categoryId}
-                          item={item}
-                          index={idx}
-                        />
+                      {report.map((_, idx) => (
+                        <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                       ))}
-                      <TableRow sx={{ bgcolor: theme.palette.action.selected }}>
-                        <TableCell />
+                    </Pie>
+                    <Tooltip
+                      formatter={(v: number) => [formatCurrency(v), "Spent"]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={7}>
+              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 320 : 380 }}>
+                <Typography variant="h6" gutterBottom>
+                  Weekly Expense Breakdown
+                </Typography>
+                {(() => {
+                  const weeklyData = getWeeklyBreakdown(
+                    expenses,
+                    selectedDate.getFullYear(),
+                    selectedDate.getMonth() + 1,
+                  );
+                  return weeklyData.length === 0 ? (
+                    <Typography
+                      align="center"
+                      color="text.secondary"
+                      sx={{ mt: 6 }}
+                    >
+                      No expense data for this period.
+                    </Typography>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="88%">
+                      <BarChart
+                        data={weeklyData}
+                        margin={{
+                          top: 10,
+                          right: 30,
+                          left: 10,
+                          bottom: isMobile ? 50 : 10,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: isMobile ? 10 : 12 }}
+                          angle={isMobile ? -40 : 0}
+                          textAnchor={isMobile ? "end" : "middle"}
+                          height={isMobile ? 70 : 35}
+                        />
+                        <YAxis
+                          tickFormatter={(v) => v.toLocaleString("en-UG")}
+                          tick={{ fontSize: 12 }}
+                          width={90}
+                        />
+                        <Tooltip
+                          formatter={(v: number) => [formatCurrency(v), "Total"]}
+                          contentStyle={{ fontSize: 13 }}
+                        />
+                        <Bar
+                          dataKey="total"
+                          name="Weekly Total"
+                          fill={theme.palette.primary.main}
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
+              </Paper>
+            </Grid>
+          </Grid>
+
+          {/* Budget vs Actual Detail + Weekly by Category side by side */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              {/* Budget vs Actual detail table — expandable subcategory rows */}
+              <Paper elevation={2} sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Budget vs Actual Detail
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ ml: 1 }}
+                  >
+                    (click ▶ to expand sub categories — only categories with
+                    subcategory-tagged expenses show the expand arrow)
+                  </Typography>
+                </Typography>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
+                        <TableCell sx={{ width: 48 }} />
                         <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
-                          Total
+                          Category
                         </TableCell>
                         <TableCell
                           align="right"
                           sx={{ fontWeight: "bold", fontSize: 14 }}
                         >
-                          {formatCurrency(totalBudget)}
+                          Budget
                         </TableCell>
                         <TableCell
                           align="right"
                           sx={{ fontWeight: "bold", fontSize: 14 }}
                         >
-                          {formatCurrency(totalActual)}
+                          Actual
                         </TableCell>
-                        <TableCell align="right">
-                          <Typography
-                            fontWeight="bold"
-                            fontSize={14}
-                            color={
-                              totalVariance >= 0 ? "success.main" : "error.main"
-                            }
-                          >
-                            {totalVariance >= 0 ? "▼" : "▲"}{" "}
-                            {formatCurrency(Math.abs(totalVariance))}
-                          </Typography>
+                        <TableCell
+                          align="right"
+                          sx={{ fontWeight: "bold", fontSize: 14 }}
+                        >
+                          Variance
                         </TableCell>
-                        <TableCell />
+                        <TableCell
+                          align="right"
+                          sx={{ fontWeight: "bold", fontSize: 14 }}
+                        >
+                          Usage&nbsp;%
+                        </TableCell>
                       </TableRow>
-                    </>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+                    </TableHead>
+                    <TableBody>
+                      {report.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={6}
+                            align="center"
+                            sx={{ color: "text.secondary", py: 5, fontSize: 14 }}
+                          >
+                            No data for this period.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        <>
+                          {report.map((item, idx) => (
+                            <CategoryRow
+                              key={item.categoryId}
+                              item={item}
+                              index={idx}
+                            />
+                          ))}
+                          <TableRow sx={{ bgcolor: theme.palette.action.selected }}>
+                            <TableCell />
+                            <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                              Total
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ fontWeight: "bold", fontSize: 14 }}
+                            >
+                              {formatCurrency(totalBudget)}
+                            </TableCell>
+                            <TableCell
+                              align="right"
+                              sx={{ fontWeight: "bold", fontSize: 14 }}
+                            >
+                              {formatCurrency(totalActual)}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography
+                                fontWeight="bold"
+                                fontSize={14}
+                                color={
+                                  totalVariance >= 0 ? "success.main" : "error.main"
+                                }
+                              >
+                                {totalVariance >= 0 ? "▼" : "▲"}{" "}
+                                {formatCurrency(Math.abs(totalVariance))}
+                              </Typography>
+                            </TableCell>
+                            <TableCell />
+                          </TableRow>
+                        </>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              {/* Weekly breakdown by category */}
+              <Paper elevation={2} sx={{ p: 3, height: isMobile ? 420 : 520 }}>
+                <Typography variant="h6" gutterBottom>
+                  Weekly Breakdown by Category
+                </Typography>
+                {(() => {
+                  const categoryNamesById = report.reduce(
+                    (acc, item) => {
+                      acc[item.categoryId] = item.categoryName;
+                      return acc;
+                    },
+                    {} as Record<number, string>,
+                  );
+
+                  const reportCategoryOrder = report.map((item) => item.categoryName);
+                  const reportCategoryColorMap = report.reduce(
+                    (acc, item, idx) => {
+                      acc[item.categoryName] = COLORS[idx % COLORS.length];
+                      return acc;
+                    },
+                    {} as Record<string, string>,
+                  );
+
+                  const weeklyByCategory = getWeeklyByCategory(
+                    expenses,
+                    selectedDate.getFullYear(),
+                    selectedDate.getMonth() + 1,
+                    categoryNamesById,
+                  );
+
+                  const weeklyCategories = weeklyByCategory.flatMap((week) =>
+                    Object.keys(week).filter((k) => k !== "week" && k !== "start"),
+                  );
+
+                  const extraCategories = Array.from(
+                    new Set(weeklyCategories.filter((cat) => !reportCategoryOrder.includes(cat))),
+                  ).sort();
+
+                  const allCategories = [...reportCategoryOrder, ...extraCategories];
+
+                  const categoryColorMap = { ...reportCategoryColorMap };
+                  extraCategories.forEach((cat, idx) => {
+                    categoryColorMap[cat] = COLORS[(reportCategoryOrder.length + idx) % COLORS.length];
+                  });
+
+                  return weeklyByCategory.length === 0 ? (
+                    <Typography
+                      align="center"
+                      color="text.secondary"
+                      sx={{ mt: 6 }}
+                    >
+                      No expense data for this period.
+                    </Typography>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="88%">
+                      <BarChart
+                        data={weeklyByCategory}
+                        margin={{
+                          top: 10,
+                          right: 20,
+                          left: 8,
+                          bottom: isMobile ? 55 : 10,
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="week"
+                          tick={{ fontSize: isMobile ? 10 : 12 }}
+                          angle={isMobile ? -30 : 0}
+                          textAnchor={isMobile ? "end" : "middle"}
+                          height={isMobile ? 65 : 35}
+                        />
+                        <YAxis
+                          tickFormatter={(v) => v.toLocaleString("en-UG")}
+                          tick={{ fontSize: 11 }}
+                          width={90}
+                        />
+                        <Tooltip
+                          formatter={(v: number, name: string) => [
+                            formatCurrency(v),
+                            name,
+                          ]}
+                          contentStyle={{ fontSize: 12 }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        {allCategories.map((cat) => (
+                          <Bar
+                            key={cat}
+                            dataKey={cat}
+                            name={cat}
+                            stackId="weekly-category"
+                            fill={categoryColorMap[cat]}
+                          />
+                        ))}
+                      </BarChart>
+                    </ResponsiveContainer>
+                  );
+                })()}
+              </Paper>
+            </Grid>
+          </Grid>
 
           {/* Detailed Expense Lines */}
           <Paper elevation={2} sx={{ p: 3 }}>

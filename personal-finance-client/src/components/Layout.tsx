@@ -46,6 +46,9 @@ const getContainerWidth = (pathname: string) => {
   if (pathname === '/expenses') {
     return false; // full width
   }
+  if (pathname === '/reports') {
+    return false; // full width
+  }
   if (pathname === '/categories') {
     return 'md'; // medium width (half screen)
   }
@@ -138,12 +141,22 @@ export default function Layout() {
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          width: location.pathname === '/expenses' ? '100%' : 'auto',
+          width: location.pathname === '/expenses' || location.pathname === '/reports' ? '100%' : 'auto',
           p: location.pathname === '/expenses' ? 0 : 2,
         }}
       >
-        {location.pathname === '/expenses' ? (
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
+        {location.pathname === '/expenses' || location.pathname === '/reports' ? (
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            width: '100%', 
+            height: '100%', 
+            px: location.pathname === '/reports' ? 2 : 0,
+            py: location.pathname === '/reports' ? 2 : 0,
+            maxWidth: location.pathname === '/reports' ? '1670px' : '100%',
+            mx: location.pathname === '/reports' ? 'auto' : 0,
+          }}>
             <Outlet />
           </Box>
         ) : (
