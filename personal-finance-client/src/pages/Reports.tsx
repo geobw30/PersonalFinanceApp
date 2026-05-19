@@ -372,7 +372,11 @@ export default function Reports() {
                   Budget vs Actual by Category
                 </Typography>
                 {report.length === 0 ? (
-                  <Typography align="center" color="text.secondary" sx={{ mt: 6 }}>
+                  <Typography
+                    align="center"
+                    color="text.secondary"
+                    sx={{ mt: 6 }}
+                  >
                     No data for this period.
                   </Typography>
                 ) : (
@@ -554,7 +558,10 @@ export default function Reports() {
                           width={90}
                         />
                         <Tooltip
-                          formatter={(v: number) => [formatCurrency(v), "Total"]}
+                          formatter={(v: number) => [
+                            formatCurrency(v),
+                            "Total",
+                          ]}
                           contentStyle={{ fontSize: 13 }}
                         />
                         <Bar
@@ -628,7 +635,11 @@ export default function Reports() {
                           <TableCell
                             colSpan={6}
                             align="center"
-                            sx={{ color: "text.secondary", py: 5, fontSize: 14 }}
+                            sx={{
+                              color: "text.secondary",
+                              py: 5,
+                              fontSize: 14,
+                            }}
                           >
                             No data for this period.
                           </TableCell>
@@ -642,9 +653,13 @@ export default function Reports() {
                               index={idx}
                             />
                           ))}
-                          <TableRow sx={{ bgcolor: theme.palette.action.selected }}>
+                          <TableRow
+                            sx={{ bgcolor: theme.palette.action.selected }}
+                          >
                             <TableCell />
-                            <TableCell sx={{ fontWeight: "bold", fontSize: 14 }}>
+                            <TableCell
+                              sx={{ fontWeight: "bold", fontSize: 14 }}
+                            >
                               Total
                             </TableCell>
                             <TableCell
@@ -664,7 +679,9 @@ export default function Reports() {
                                 fontWeight="bold"
                                 fontSize={14}
                                 color={
-                                  totalVariance >= 0 ? "success.main" : "error.main"
+                                  totalVariance >= 0
+                                    ? "success.main"
+                                    : "error.main"
                                 }
                               >
                                 {totalVariance >= 0 ? "▼" : "▲"}{" "}
@@ -696,7 +713,9 @@ export default function Reports() {
                     {} as Record<number, string>,
                   );
 
-                  const reportCategoryOrder = report.map((item) => item.categoryName);
+                  const reportCategoryOrder = report.map(
+                    (item) => item.categoryName,
+                  );
                   const reportCategoryColorMap = report.reduce(
                     (acc, item, idx) => {
                       acc[item.categoryName] = COLORS[idx % COLORS.length];
@@ -713,18 +732,30 @@ export default function Reports() {
                   );
 
                   const weeklyCategories = weeklyByCategory.flatMap((week) =>
-                    Object.keys(week).filter((k) => k !== "week" && k !== "start"),
+                    Object.keys(week).filter(
+                      (k) => k !== "week" && k !== "start",
+                    ),
                   );
 
                   const extraCategories = Array.from(
-                    new Set(weeklyCategories.filter((cat) => !reportCategoryOrder.includes(cat))),
+                    new Set(
+                      weeklyCategories.filter(
+                        (cat) => !reportCategoryOrder.includes(cat),
+                      ),
+                    ),
                   ).sort();
 
-                  const allCategories = [...reportCategoryOrder, ...extraCategories];
+                  const allCategories = [
+                    ...reportCategoryOrder,
+                    ...extraCategories,
+                  ];
 
                   const categoryColorMap = { ...reportCategoryColorMap };
                   extraCategories.forEach((cat, idx) => {
-                    categoryColorMap[cat] = COLORS[(reportCategoryOrder.length + idx) % COLORS.length];
+                    categoryColorMap[cat] =
+                      COLORS[
+                        (reportCategoryOrder.length + idx) % COLORS.length
+                      ];
                   });
 
                   return weeklyByCategory.length === 0 ? (
