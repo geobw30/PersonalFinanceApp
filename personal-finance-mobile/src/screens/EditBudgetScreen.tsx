@@ -4,19 +4,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { Button, Input, Text } from '@rneui/themed';
 import { format, endOfMonth, startOfMonth } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { createBudget, getCategories } from '../api/client';
+import { getCategories, updateBudget } from '../api/client';
 import type { Category, RootStackParamList } from '../types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function AddBudgetScreen() {
+export default function EditBudgetScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<any>();
+  const { budget } = route.params;
+
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryId, setCategoryId] = useState('');
-  const [amount, setAmount] = useState('');
-  const [month, setMonth] = useState(new Date());
+  const [categoryId, setCategoryId] = useState(String(budget.categoryId));
+  const [amount, setAmount] = useState(String(budget.amount));
+  const [month, setMonth] = useState(new Date(budget.startDate));
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,8 +29,8 @@ export default function AddBudgetScreen() {
 
   const budgetName = useMemo(() => {
     const selected = categories.find((c) => c.id === Number(categoryId));
-    return selected ? `${selected.name} - ${format(month, 'MMM yyyy')}` : `Budget - ${format(month, 'MMM yyyy')}`;
-  }, [categories, categoryId, month]);
+    return selected ? `${selected.name} - ${format(month, 'MMM yyyy')}` : budget.name;
+  }, [categories, categoryId, month, budget.name]);
 
   const handleSave = async () => {
     const value = Number(amount);
@@ -36,7 +39,7 @@ export default function AddBudgetScreen() {
       return;
     }
 
-    await createBudget({
+    await updateBudget(budget.id, {
       name: budgetName,
       categoryId: Number(categoryId),
       amount: value,
@@ -77,10 +80,8 @@ export default function AddBudgetScreen() {
           />
         ) : null}
 
-        <Input label='Budget Name' value={budgetName} disabled />
-
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title='Save Budget' onPress={handleSave} />
+        <Button title='Update Budget' onPress={handleSave} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

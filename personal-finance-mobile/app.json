@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Personal Finance Mobile",
+    "slug": "personal-finance-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.personalfinance.mobile"
+    }
+  }
+}
