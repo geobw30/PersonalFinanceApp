@@ -107,14 +107,23 @@ export default function SettingsScreen() {
                 size={16}
                 color={activeTab === tab ? "#1976d2" : "#999"}
               />
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === tab && styles.tabTextActive,
+                ]}
+              >
+                {tab}
+              </Text>
             </View>
           </TouchableOpacity>
         ))}
       </View>
 
       <ScrollView
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {activeTab === "Categories" &&
           (categories.length === 0 ? (
@@ -125,7 +134,9 @@ export default function SettingsScreen() {
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title}>{cat.name}</Text>
-                    {cat.description ? <Text style={styles.description}>{cat.description}</Text> : null}
+                    {cat.description ? (
+                      <Text style={styles.description}>{cat.description}</Text>
+                    ) : null}
                   </View>
                   <View style={styles.actions}>
                     <TouchableOpacity
@@ -141,7 +152,9 @@ export default function SettingsScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.btn}
-                      onPress={() => navigation.navigate("EditCategory", { category: cat })}
+                      onPress={() =>
+                        navigation.navigate("EditCategory", { category: cat })
+                      }
                     >
                       <Text style={styles.btnText}>Edit</Text>
                     </TouchableOpacity>
@@ -171,12 +184,18 @@ export default function SettingsScreen() {
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title}>{type.name}</Text>
-                    {type.description ? <Text style={styles.description}>{type.description}</Text> : null}
+                    {type.description ? (
+                      <Text style={styles.description}>{type.description}</Text>
+                    ) : null}
                   </View>
                   <View style={styles.actions}>
                     <TouchableOpacity
                       style={styles.btn}
-                      onPress={() => navigation.navigate("EditInvestmentType", { investmentType: type })}
+                      onPress={() =>
+                        navigation.navigate("EditInvestmentType", {
+                          investmentType: type,
+                        })
+                      }
                     >
                       <Text style={styles.btnText}>Edit</Text>
                     </TouchableOpacity>
@@ -206,13 +225,21 @@ export default function SettingsScreen() {
                 <View style={styles.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.title}>{sub.name}</Text>
-                    <Text style={styles.description}>{sub.categoryName ?? `Category ${sub.categoryId}`}</Text>
-                    {sub.description ? <Text style={styles.description}>{sub.description}</Text> : null}
+                    <Text style={styles.description}>
+                      {sub.categoryName ?? `Category ${sub.categoryId}`}
+                    </Text>
+                    {sub.description ? (
+                      <Text style={styles.description}>{sub.description}</Text>
+                    ) : null}
                   </View>
                   <View style={styles.actions}>
                     <TouchableOpacity
                       style={styles.btn}
-                      onPress={() => navigation.navigate("EditSubCategory", { subCategory: sub })}
+                      onPress={() =>
+                        navigation.navigate("EditSubCategory", {
+                          subCategory: sub,
+                        })
+                      }
                     >
                       <Text style={styles.btnText}>Edit</Text>
                     </TouchableOpacity>
@@ -236,7 +263,12 @@ export default function SettingsScreen() {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <FAB icon={{ name: "add", color: "#fff" }} color="#1976d2" placement="right" onPress={fabAction} />
+      <FAB
+        icon={{ name: "add", color: "#fff" }}
+        color="#1976d2"
+        placement="right"
+        onPress={fabAction}
+      />
       <LoadingOverlay visible={loading} />
     </View>
   );
@@ -264,7 +296,12 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 15, fontWeight: "700" },
   description: { color: "#666", marginTop: 4, fontSize: 12 },
-  actions: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
   btn: {
     paddingHorizontal: 10,
     paddingVertical: 6,
