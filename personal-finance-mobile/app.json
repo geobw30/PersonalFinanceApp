@@ -3,11 +3,16 @@
     "name": "Personal Finance Mobile",
     "slug": "personal-finance-mobile",
     "version": "1.0.0",
+    "icon": "./assets/app-icon.png",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "android": {
-      "package": "com.personalfinance.mobile"
+      "package": "com.personalfinance.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#ffffff"
+      }
     },
     "plugins": ["expo-asset", "expo-font"]
   }
