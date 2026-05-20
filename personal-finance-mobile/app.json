@@ -9,11 +9,10 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "com.personalfinance.mobile"
-    }
+    },
+    "plugins": ["expo-asset", "expo-font"]
   }
 }
