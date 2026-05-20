@@ -192,7 +192,8 @@ export default function BudgetsScreen() {
                   {formatCurrency(budget.amount)}
                 </Text>
                 <Text style={styles.meta}>
-                  {safeDateLabel(budget.startDate)} - {safeDateLabel(budget.endDate)}
+                  {safeDateLabel(budget.startDate)} -{" "}
+                  {safeDateLabel(budget.endDate)}
                 </Text>
               </View>
               <View style={styles.actions}>
@@ -274,22 +275,26 @@ const styles = StyleSheet.create({
   btn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "#1976d2",
+    backgroundColor: "#fff",
     borderRadius: 4,
+    borderColor: "#1976d2",
+    borderWidth: 1,
   },
   btnText: {
-    color: "#fff",
+    color: "#1976d2",
     fontSize: 12,
     fontWeight: "600",
   },
   btnDelete: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "#d32f2f",
+    backgroundColor: "#fff",
     borderRadius: 4,
+    borderColor: "#d32f2f",
+    borderWidth: 1,
   },
   btnTextDelete: {
-    color: "#fff",
+    color: "#d32f2f",
     fontSize: 12,
     fontWeight: "600",
   },
