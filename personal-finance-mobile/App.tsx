@@ -77,7 +77,12 @@ function TabNavigator() {
         component={BudgetsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="account-balance" type="material" size={22} color={color} />
+            <Icon
+              name="account-balance"
+              type="material"
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
