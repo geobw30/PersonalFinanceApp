@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Card, FAB, Icon, Text } from "@rneui/themed";
+import { Button, Card, FAB, Text } from "@rneui/themed";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { format } from "date-fns";
@@ -181,19 +181,26 @@ export default function FinanceScreen() {
                     <Text style={[styles.itemAmount, { color: "#2e7d32" }]}>
                       {formatCurrency(income.amount)}
                     </Text>
-                    <View style={styles.iconRow}>
-                      <Icon
-                        name="edit"
-                        type="material"
-                        color="#1976d2"
+                    <View style={styles.buttonRow}>
+                      <Button
+                        title="Edit"
+                        type="outline"
+                        titleStyle={styles.actionButtonTitle}
+                        buttonStyle={styles.actionButton}
+                        containerStyle={styles.actionButtonContainer}
                         onPress={() =>
                           navigation.navigate("EditIncome", { income })
                         }
                       />
-                      <Icon
-                        name="delete"
-                        type="material"
-                        color="#d32f2f"
+                      <Button
+                        title="Delete"
+                        type="outline"
+                        titleStyle={[
+                          styles.actionButtonTitle,
+                          styles.deleteButtonTitle,
+                        ]}
+                        buttonStyle={[styles.actionButton, styles.deleteButton]}
+                        containerStyle={styles.actionButtonContainer}
                         onPress={() =>
                           confirmDelete("income", async () => {
                             await deleteIncome(income.id);
@@ -248,19 +255,29 @@ export default function FinanceScreen() {
                           / {formatCurrency(saving.targetAmount)}
                         </Text>
                       ) : null}
-                      <View style={styles.iconRow}>
-                        <Icon
-                          name="edit"
-                          type="material"
-                          color="#1976d2"
+                      <View style={styles.buttonRow}>
+                        <Button
+                          title="Edit"
+                          type="outline"
+                          titleStyle={styles.actionButtonTitle}
+                          buttonStyle={styles.actionButton}
+                          containerStyle={styles.actionButtonContainer}
                           onPress={() =>
                             navigation.navigate("EditSaving", { saving })
                           }
                         />
-                        <Icon
-                          name="delete"
-                          type="material"
-                          color="#d32f2f"
+                        <Button
+                          title="Delete"
+                          type="outline"
+                          titleStyle={[
+                            styles.actionButtonTitle,
+                            styles.deleteButtonTitle,
+                          ]}
+                          buttonStyle={[
+                            styles.actionButton,
+                            styles.deleteButton,
+                          ]}
+                          containerStyle={styles.actionButtonContainer}
                           onPress={() =>
                             confirmDelete("saving", async () => {
                               await deleteSaving(saving.id);
@@ -326,21 +343,31 @@ export default function FinanceScreen() {
                         {gain >= 0 ? "+" : ""}
                         {formatCurrency(gain)}
                       </Text>
-                      <View style={styles.iconRow}>
-                        <Icon
-                          name="edit"
-                          type="material"
-                          color="#1976d2"
+                      <View style={styles.buttonRow}>
+                        <Button
+                          title="Edit"
+                          type="outline"
+                          titleStyle={styles.actionButtonTitle}
+                          buttonStyle={styles.actionButton}
+                          containerStyle={styles.actionButtonContainer}
                           onPress={() =>
                             navigation.navigate("EditInvestment", {
                               investment: inv,
                             })
                           }
                         />
-                        <Icon
-                          name="delete"
-                          type="material"
-                          color="#d32f2f"
+                        <Button
+                          title="Delete"
+                          type="outline"
+                          titleStyle={[
+                            styles.actionButtonTitle,
+                            styles.deleteButtonTitle,
+                          ]}
+                          buttonStyle={[
+                            styles.actionButton,
+                            styles.deleteButton,
+                          ]}
+                          containerStyle={styles.actionButtonContainer}
                           onPress={() =>
                             confirmDelete("investment", async () => {
                               await deleteInvestment(inv.id);
@@ -406,7 +433,21 @@ const styles = StyleSheet.create({
   itemMeta: { marginTop: 2, fontSize: 12, color: "#777" },
   itemAmount: { fontWeight: "700", textAlign: "right", fontSize: 14 },
   itemActions: { alignItems: "flex-end", gap: 4 },
-  iconRow: { flexDirection: "row", gap: 10, marginTop: 4 },
+  buttonRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  actionButtonContainer: { minWidth: 70 },
+  actionButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderColor: "#1976d2",
+  },
+  actionButtonTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1976d2",
+  },
+  deleteButton: { borderColor: "#d32f2f" },
+  deleteButtonTitle: { color: "#d32f2f" },
   progressTrack: {
     height: 6,
     backgroundColor: "#e0e0e0",
