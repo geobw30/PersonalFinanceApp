@@ -7,30 +7,37 @@ import {
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { updateSubCategory } from "../api/client";
+import {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
+import { updateInvestmentType } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { RootStackParamList } from "../types";
 
+type Props = NativeStackScreenProps<RootStackParamList, "EditInvestmentType">;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function EditSubCategoryScreen() {
+export default function EditInvestmentTypeScreen() {
   const navigation = useNavigation<Nav>();
-  const route = useRoute<any>();
-  const { subCategory } = route.params;
-  const [name, setName] = useState(subCategory.name);
-  const [description, setDescription] = useState(subCategory.description || "");
-  const [error, setError] = useState("");
+  const route = useRoute<Props["route"]>();
+  const { investmentType } = route.params;
+
   const [saving, setSaving] = useState(false);
+  const [name, setName] = useState(investmentType.name);
+  const [description, setDescription] = useState(
+    investmentType.description ?? "",
+  );
+  const [error, setError] = useState("");
 
   const onSave = async () => {
     if (!name.trim()) {
-      setError("Sub category name is required.");
+      setError("Name is required.");
       return;
     }
     setSaving(true);
     try {
-      await updateSubCategory(subCategory.id, {
+      await updateInvestmentType(investmentType.id, {
         name: name.trim(),
         description: description.trim() || undefined,
       });
@@ -48,17 +55,13 @@ export default function EditSubCategoryScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Input label="Name" value={name} onChangeText={setName} />
         <Input
-          label="Description"
+          label="Description (optional)"
           value={description}
           onChangeText={setDescription}
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button
-          title="Update Sub Category"
-          onPress={onSave}
-          disabled={saving}
-        />
+        <Button title="Update" onPress={onSave} disabled={saving} />
       </ScrollView>
       <LoadingOverlay visible={saving} message="Saving…" />
     </KeyboardAvoidingView>

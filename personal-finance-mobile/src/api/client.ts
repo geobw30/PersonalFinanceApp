@@ -6,6 +6,11 @@ import type {
   Expense,
   BudgetSummary,
   BudgetReportItem,
+  Investment,
+  InvestmentType,
+  Saving,
+  Income,
+  FinancialSummary,
 } from '../types';
 
 const apiClient = axios.create({
@@ -31,6 +36,7 @@ export const deleteSubCategory = (id: number) => apiClient.delete(`/subcategorie
 
 export const getBudgetsByMonth = (year: number, month: number) =>
   apiClient.get<Budget[]>(`/budgets/month/${year}/${month}`);
+export const getBudgets = () => apiClient.get<Budget[]>('/budgets');
 export const createBudget = (data: {
   name: string;
   categoryId: number;
@@ -76,3 +82,40 @@ export const updateExpense = (
   },
 ) => apiClient.put<void>(`/expenses/${id}`, data);
 export const deleteExpense = (id: number) => apiClient.delete(`/expenses/${id}`);
+
+// Investments API
+export const getInvestments = () => apiClient.get<Investment[]>('/investments');
+export const createInvestment = (data: Omit<Investment, 'id' | 'investmentType'>) =>
+  apiClient.post<Investment>('/investments', data);
+export const updateInvestment = (id: number, data: Omit<Investment, 'id' | 'investmentType'>) =>
+  apiClient.put<void>(`/investments/${id}`, data);
+export const deleteInvestment = (id: number) => apiClient.delete(`/investments/${id}`);
+
+// Savings API
+export const getSavings = () => apiClient.get<Saving[]>('/savings');
+export const createSaving = (data: Omit<Saving, 'id'>) =>
+  apiClient.post<Saving>('/savings', data);
+export const updateSaving = (id: number, data: Omit<Saving, 'id'>) =>
+  apiClient.put<void>(`/savings/${id}`, data);
+export const deleteSaving = (id: number) => apiClient.delete(`/savings/${id}`);
+
+// Incomes API
+export const getIncomes = () => apiClient.get<Income[]>('/incomes');
+export const getIncomesByMonth = (year: number, month: number) =>
+  apiClient.get<Income[]>(`/incomes/month/${year}/${month}`);
+export const createIncome = (data: Omit<Income, 'id'>) =>
+  apiClient.post<Income>('/incomes', data);
+export const updateIncome = (id: number, data: Omit<Income, 'id'>) =>
+  apiClient.put<void>(`/incomes/${id}`, data);
+export const deleteIncome = (id: number) => apiClient.delete(`/incomes/${id}`);
+
+// Financial Summary API
+export const getFinancialSummary = () => apiClient.get<FinancialSummary>('/financial-summary');
+
+// Investment Types API
+export const getInvestmentTypes = () => apiClient.get<InvestmentType[]>('/investmenttypes');
+export const createInvestmentType = (data: Omit<InvestmentType, 'id'>) =>
+  apiClient.post<InvestmentType>('/investmenttypes', data);
+export const updateInvestmentType = (id: number, data: Omit<InvestmentType, 'id'>) =>
+  apiClient.put<void>(`/investmenttypes/${id}`, { id, ...data });
+export const deleteInvestmentType = (id: number) => apiClient.delete(`/investmenttypes/${id}`);
