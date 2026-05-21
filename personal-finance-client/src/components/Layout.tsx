@@ -52,7 +52,7 @@ const getContainerWidth = (pathname: string) => {
     return false; // full width
   }
   if (pathname === "/reports") {
-    return false; // full width
+    return "xl"; // centered with equal left/right margins
   }
   if (pathname === "/categories") {
     return "md"; // medium width (half screen)
@@ -61,7 +61,7 @@ const getContainerWidth = (pathname: string) => {
 };
 
 export default function Layout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopDrawerOpen, setDesktopDrawerOpen] = useState(true);
   const muiTheme = useMuiTheme();
   const { mode, toggleColorMode } = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down("sm"));
@@ -69,7 +69,7 @@ export default function Layout() {
   const navigate = useNavigate();
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    setDesktopDrawerOpen((prev) => !prev);
   };
 
   const drawer = (
@@ -123,7 +123,8 @@ export default function Layout() {
       {/* Side drawer for desktop */}
       {!isMobile && (
         <Drawer
-          variant="permanent"
+          variant="persistent"
+          open={desktopDrawerOpen}
           sx={{
             width: 240,
             flexShrink: 0,
@@ -147,31 +148,35 @@ export default function Layout() {
           flexGrow: 1,
           mt: ["48px", "56px", "64px"],
           mb: isMobile ? "56px" : 0,
-          ...(isMobile ? {} : { ml: "240px" }),
+          ...(isMobile ? {} : { ml: desktopDrawerOpen ? "240px" : 0 }),
           display: "flex",
           flexDirection: "column",
           height: "100%",
-          width:
-            location.pathname === "/expenses" ||
-            location.pathname === "/reports"
-              ? "100%"
-              : "auto",
-          p: location.pathname === "/expenses" ? 0 : 2,
+          width: isMobile
+            ? "100%"
+            : desktopDrawerOpen
+              ? "calc(100% - 240px)"
+              : "100%",
+          maxWidth: "100%",
+          minWidth: 0,
+          overflowX: "hidden",
+          p: { xs: 1, sm: 2 },
         }}
       >
-        {location.pathname === "/expenses" ||
-        location.pathname === "/reports" ? (
+        {location.pathname === "/expenses" ? (
           <Box
             sx={{
               flex: 1,
               display: "flex",
               flexDirection: "column",
               width: "100%",
+              minWidth: 0,
               height: "100%",
-              px: location.pathname === "/reports" ? 2 : 0,
-              py: location.pathname === "/reports" ? 2 : 0,
-              maxWidth: location.pathname === "/reports" ? "1890px" : "100%",
-              mx: location.pathname === "/reports" ? "auto" : 0,
+              px: { xs: 0, sm: 1 },
+              py: { xs: 0, sm: 1 },
+              maxWidth: "1600px",
+              mx: "auto",
+              boxSizing: "border-box",
             }}
           >
             <Outlet />
@@ -181,7 +186,9 @@ export default function Layout() {
             maxWidth={getContainerWidth(location.pathname)}
             sx={{
               height: "100%",
-              px: 2,
+              width: "100%",
+              minWidth: 0,
+              px: { xs: 0.5, sm: 2 },
             }}
           >
             <Outlet />
@@ -207,6 +214,17 @@ export default function Layout() {
               navigate(newValue);
             }}
             showLabels
+            sx={{
+              width: "100%",
+              "& .MuiBottomNavigationAction-root": {
+                minWidth: 0,
+                maxWidth: "none",
+                px: 0,
+              },
+              "& .MuiBottomNavigationAction-label": {
+                fontSize: "0.65rem",
+              },
+            }}
           >
             {navigationItems.map((item) => (
               <BottomNavigationAction

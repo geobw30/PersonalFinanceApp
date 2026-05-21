@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -16,12 +16,23 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
-  Tooltip
-} from '@mui/material';
-import { Edit as EditOutlinedIcon, Delete as DeleteOutlinedIcon, Info as InfoIcon } from '@mui/icons-material';
-import type { Category } from '../types';
-import { getCategories, createCategory, updateCategory, deleteCategory, isCategoryInUse } from '../api/client';
-import { useToast } from '../contexts/ToastContext';
+  Tooltip,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  Edit as EditOutlinedIcon,
+  Delete as DeleteOutlinedIcon,
+  Info as InfoIcon,
+} from "@mui/icons-material";
+import type { Category } from "../types";
+import {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  isCategoryInUse,
+} from "../api/client";
+import { useToast } from "../contexts/ToastContext";
 
 interface CategoryUsage {
   inUse: boolean;
@@ -34,12 +45,17 @@ interface CategoryUsage {
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [error, setError] = useState("");
+  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categoryUsages, setCategoryUsages] = useState<Record<number, CategoryUsage>>({});
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null,
+  );
+  const [categoryUsages, setCategoryUsages] = useState<
+    Record<number, CategoryUsage>
+  >({});
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -55,7 +71,10 @@ export default function Categories() {
           const { data } = await isCategoryInUse(category.id);
           usages[category.id] = data;
         } catch (err) {
-          console.error(`Failed to fetch usage for category ${category.id}:`, err);
+          console.error(
+            `Failed to fetch usage for category ${category.id}:`,
+            err,
+          );
         }
       }
       setCategoryUsages(usages);
@@ -71,7 +90,7 @@ export default function Categories() {
       const { data } = await getCategories();
       setCategories(data);
     } catch (err) {
-      setError('Failed to load categories');
+      setError("Failed to load categories");
     } finally {
       setLoading(false);
     }
@@ -81,18 +100,29 @@ export default function Categories() {
     e.preventDefault();
     try {
       if (!newCategory.name.trim()) {
-        showToast('Category name is required', 'error');
+        showToast("Category name is required", "error");
         return;
       }
 
       await createCategory(newCategory);
-      setNewCategory({ name: '', description: '' });
+      setNewCategory({ name: "", description: "" });
+      setAddDialogOpen(false);
       fetchCategories();
-      showToast('Category created successfully', 'success');
+      showToast("Category created successfully", "success");
     } catch (error) {
-      console.error('Error creating category:', error);
-      showToast('Failed to create category', 'error');
+      console.error("Error creating category:", error);
+      showToast("Failed to create category", "error");
     }
+  };
+
+  const handleAddOpen = () => {
+    setNewCategory({ name: "", description: "" });
+    setAddDialogOpen(true);
+  };
+
+  const handleAddClose = () => {
+    setAddDialogOpen(false);
+    setNewCategory({ name: "", description: "" });
   };
 
   const handleEdit = async () => {
@@ -100,15 +130,15 @@ export default function Categories() {
     try {
       await updateCategory(selectedCategory.id, {
         name: selectedCategory.name,
-        description: selectedCategory.description
+        description: selectedCategory.description,
       });
       setEditDialogOpen(false);
       setSelectedCategory(null);
       fetchCategories();
-      showToast('Category updated successfully', 'success');
+      showToast("Category updated successfully", "success");
     } catch (error) {
-      console.error('Error updating category:', error);
-      showToast('Failed to update category', 'error');
+      console.error("Error updating category:", error);
+      showToast("Failed to update category", "error");
     }
   };
 
@@ -125,7 +155,7 @@ export default function Categories() {
       if (usageResponse.data.inUse) {
         showToast(
           `Cannot delete category. It is being used by ${usageResponse.data.usageDetails.budgets} budgets and ${usageResponse.data.usageDetails.expenses} expenses.`,
-          'error'
+          "error",
         );
         setDeleteDialogOpen(false);
         return;
@@ -135,10 +165,10 @@ export default function Categories() {
       setDeleteDialogOpen(false);
       setSelectedCategory(null);
       fetchCategories();
-      showToast('Category deleted successfully', 'success');
+      showToast("Category deleted successfully", "success");
     } catch (error) {
-      console.error('Error deleting category:', error);
-      showToast('Failed to delete category', 'error');
+      console.error("Error deleting category:", error);
+      showToast("Failed to delete category", "error");
     }
   };
 
@@ -154,49 +184,40 @@ export default function Categories() {
       details.push(`${usage.usageDetails.expenses} expense(s)`);
     }
 
-    return `Category in use: ${details.join(' and ')}`;
+    return `Category in use: ${details.join(" and ")}`;
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="60vh"
+      >
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Typography variant="h5" component="h1">
-        Categories
-      </Typography>
-
-      {/* Add Category Form */}
-      <Paper sx={{ p: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Add New Category
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography variant="h5" component="h1">
+          Categories
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <TextField
-            label="Category Name"
-            value={newCategory.name}
-            onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-            required
-            fullWidth
-          />
-          <TextField
-            label="Description"
-            value={newCategory.description}
-            onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-            multiline
-            rows={2}
-            fullWidth
-          />
-          <Button type="submit" variant="contained" size="small" sx={{ alignSelf: 'flex-start' }}>
-            Add Category
-          </Button>
-        </Box>
-      </Paper>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={handleAddOpen}
+        ></Button>
+      </Box>
 
       {/* Categories List */}
       <Paper>
@@ -209,10 +230,12 @@ export default function Categories() {
                   primary={category.name}
                   secondary={category.description}
                 />
-                <ListItemSecondaryAction sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton 
-                    edge="end" 
-                    aria-label="edit" 
+                <ListItemSecondaryAction
+                  sx={{ display: "flex", alignItems: "center" }}
+                >
+                  <IconButton
+                    edge="end"
+                    aria-label="edit"
                     onClick={() => {
                       setSelectedCategory(category);
                       setEditDialogOpen(true);
@@ -222,8 +245,8 @@ export default function Categories() {
                     <EditOutlinedIcon fontSize="small" />
                   </IconButton>
                   {!categoryUsages[category.id]?.inUse && (
-                    <IconButton 
-                      edge="end" 
+                    <IconButton
+                      edge="end"
                       aria-label="delete"
                       onClick={() => handleDeleteClick(category)}
                       color="error"
@@ -249,18 +272,26 @@ export default function Categories() {
       <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
         <DialogTitle>Edit Category</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
             <TextField
               label="Category Name"
-              value={selectedCategory?.name || ''}
-              onChange={(e) => setSelectedCategory(prev => prev ? { ...prev, name: e.target.value } : null)}
+              value={selectedCategory?.name || ""}
+              onChange={(e) =>
+                setSelectedCategory((prev) =>
+                  prev ? { ...prev, name: e.target.value } : null,
+                )
+              }
               required
               fullWidth
             />
             <TextField
               label="Description"
-              value={selectedCategory?.description || ''}
-              onChange={(e) => setSelectedCategory(prev => prev ? { ...prev, description: e.target.value } : null)}
+              value={selectedCategory?.description || ""}
+              onChange={(e) =>
+                setSelectedCategory((prev) =>
+                  prev ? { ...prev, description: e.target.value } : null,
+                )
+              }
               multiline
               rows={2}
               fullWidth
@@ -268,22 +299,86 @@ export default function Categories() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)} size="small">Cancel</Button>
-          <Button onClick={handleEdit} variant="contained" size="small">Save</Button>
+          <Button onClick={() => setEditDialogOpen(false)} size="small">
+            Cancel
+          </Button>
+          <Button onClick={handleEdit} variant="contained" size="small">
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Add Dialog */}
+      <Dialog
+        open={addDialogOpen}
+        onClose={handleAddClose}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add Category</DialogTitle>
+        <Box component="form" onSubmit={handleSubmit}>
+          <DialogContent>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}
+            >
+              <TextField
+                autoFocus
+                label="Category Name"
+                value={newCategory.name}
+                onChange={(e) =>
+                  setNewCategory({ ...newCategory, name: e.target.value })
+                }
+                required
+                fullWidth
+              />
+              <TextField
+                label="Description"
+                value={newCategory.description}
+                onChange={(e) =>
+                  setNewCategory({
+                    ...newCategory,
+                    description: e.target.value,
+                  })
+                }
+                multiline
+                rows={2}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleAddClose} size="small">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained" size="small">
+              Add
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
       {/* Delete Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Category</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the category "{selectedCategory?.name}"? This action cannot be undone.
+            Are you sure you want to delete the category "
+            {selectedCategory?.name}"? This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} size="small">Cancel</Button>
-          <Button onClick={handleDelete} color="error" variant="contained" size="small">
+          <Button onClick={() => setDeleteDialogOpen(false)} size="small">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            size="small"
+          >
             Delete
           </Button>
         </DialogActions>
@@ -296,4 +391,4 @@ export default function Categories() {
       )}
     </Box>
   );
-} 
+}
