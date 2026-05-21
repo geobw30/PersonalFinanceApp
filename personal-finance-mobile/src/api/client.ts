@@ -14,7 +14,8 @@ import type {
 } from '../types';
 
 const apiClient = axios.create({
-  baseURL: 'http://10.0.2.2:5254/api',
+  //baseURL: 'http://10.0.2.2:5254/api', //local
+  baseURL: 'https://personal-finance-api-prod-bdcc79f21289.herokuapp.com/api', // production
   headers: { 'Content-Type': 'application/json' },
 });
 

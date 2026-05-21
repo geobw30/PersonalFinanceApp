@@ -26,9 +26,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add CORS
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>()
+        ?? new[] { "http://localhost:5173" };
+
     options.AddPolicy("AllowReactApp",
-        builder => builder
-            .WithOrigins("http://localhost:5173") // Vite's default port
+        corsBuilder => corsBuilder
+            .WithOrigins(allowedOrigins)
             .AllowAnyMethod()
             .AllowAnyHeader());
 });
@@ -42,7 +47,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+var disableHttpsRedirection = builder.Configuration.GetValue<bool>("DisableHttpsRedirection");
+if (!disableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("AllowReactApp");
 app.UseAuthorization();
 app.MapControllers();
