@@ -433,7 +433,7 @@ export default function Finance() {
               startIcon={<AddIcon />}
               onClick={() => setAddInvestmentDialogOpen(true)}
             >
-              Add Investment
+              
             </Button>
           </Box>
           <List>
@@ -497,7 +497,7 @@ export default function Finance() {
               startIcon={<AddIcon />}
               onClick={() => setAddSavingDialogOpen(true)}
             >
-              Add Saving
+              
             </Button>
           </Box>
           <List>
@@ -554,7 +554,7 @@ export default function Finance() {
               startIcon={<AddIcon />}
               onClick={() => setAddIncomeDialogOpen(true)}
             >
-              Add Income
+              
             </Button>
           </Box>
           <List>

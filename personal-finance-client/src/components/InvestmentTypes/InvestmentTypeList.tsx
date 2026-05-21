@@ -129,7 +129,7 @@ const InvestmentTypeList: React.FC = () => {
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
         >
-          Add Investment Type
+          
         </Button>
       </Box>
 

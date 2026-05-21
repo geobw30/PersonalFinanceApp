@@ -16,8 +16,10 @@ import type {
   UpdateBudgetRequest
 } from '../types';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5254/api';
+
 const apiClient = axios.create({
-  baseURL: 'http://localhost:5254/api', // TODO - get this from env variable
+  baseURL: apiBaseUrl,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -150,12 +150,14 @@ const SubCategoryList: React.FC = () => {
     : subCategories;
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1, sm: 3 }, width: "100%", minWidth: 0 }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          flexWrap: "wrap",
+          gap: 1,
           mb: 2,
         }}
       >
@@ -164,13 +166,18 @@ const SubCategoryList: React.FC = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
-        >
-          Add Sub Category
-        </Button>
+        ></Button>
       </Box>
 
       {/* Filter by category */}
-      <FormControl size="small" sx={{ mb: 2, minWidth: 220 }}>
+      <FormControl
+        size="small"
+        sx={{
+          mb: 2,
+          minWidth: { xs: 0, sm: 220 },
+          width: { xs: "100%", sm: "auto" },
+        }}
+      >
         <InputLabel>Filter by Category</InputLabel>
         <Select
           value={filterCategoryId}

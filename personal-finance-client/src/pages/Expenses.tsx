@@ -20,6 +20,7 @@ import {
   Grid,
   LinearProgress,
   Tooltip,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -49,6 +50,7 @@ import ExpenseDialog from "../components/ExpenseDialog";
 import ConfirmDialog from "../components/ConfirmDialog";
 import { format } from "date-fns";
 import { useToast } from "../contexts/ToastContext";
+import { useTheme } from "@mui/material/styles";
 
 const getCategoryIcon = (categoryName: string) => {
   switch (categoryName.toLowerCase()) {
@@ -73,6 +75,8 @@ const getCategoryIcon = (categoryName: string) => {
 };
 
 export default function Expenses() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -450,6 +454,8 @@ export default function Expenses() {
                     key={expense.id}
                     sx={{
                       borderRadius: 1,
+                      flexDirection: isMobile ? "column" : "row",
+                      alignItems: isMobile ? "stretch" : "center",
                       "&:hover": { bgcolor: "action.hover" },
                     }}
                   >
@@ -480,33 +486,58 @@ export default function Expenses() {
                           )}
                         </>
                       }
+                      sx={{
+                        mr: isMobile ? 0 : 2,
+                        minWidth: 0,
+                        wordBreak: "break-word",
+                      }}
                     />
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: isMobile ? "stretch" : "flex-end",
+                        gap: 0.5,
+                        width: isMobile ? "100%" : "auto",
+                        mt: isMobile ? 1 : 0,
+                      }}
+                    >
                       <Typography
                         variant="body2"
                         color="error"
-                        sx={{ fontWeight: "medium" }}
+                        sx={{
+                          fontWeight: "medium",
+                          alignSelf: isMobile ? "flex-end" : "auto",
+                          whiteSpace: "nowrap",
+                        }}
                       >
                         {formatCurrency(Math.abs(expense.amount))}
                       </Typography>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setEditingExpense(expense);
-                          setEditDialogOpen(true);
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignSelf: isMobile ? "flex-end" : "auto",
                         }}
                       >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setDeletingExpense(expense);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setEditingExpense(expense);
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setDeletingExpense(expense);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
                   </ListItem>
                 ))}
