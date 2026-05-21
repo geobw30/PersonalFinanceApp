@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ThemeProvider } from "@rneui/themed";
 import { Icon } from "@rneui/themed";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Image, Text, View } from "react-native";
 import type { RootStackParamList, MainTabParamList } from "./src/types";
 
 import HomeScreen from "./src/screens/HomeScreen";
@@ -33,11 +34,31 @@ import EditInvestmentTypeScreen from "./src/screens/EditInvestmentTypeScreen";
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+function BrandedHeaderTitle() {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
+      <Image
+        source={require("./assets/app-icon.png")}
+        style={{ width: 26, height: 26, marginRight: 8, borderRadius: 6 }}
+      />
+      <Text style={{ fontSize: 18, fontWeight: "700", color: "#111827" }}>
+        Personal Finance
+      </Text>
+    </View>
+  );
+}
+
 function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarShowLabel: true,
+        headerTitle: () => <BrandedHeaderTitle />,
         tabBarActiveTintColor: "#1e88e5",
         tabBarInactiveTintColor: "#607d8b",
         tabBarStyle: {
@@ -122,7 +143,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <NavigationContainer>
-          <Stack.Navigator>
+          <Stack.Navigator
+            screenOptions={{
+              headerTitle: () => <BrandedHeaderTitle />,
+            }}
+          >
             <Stack.Screen
               name="MainTabs"
               component={TabNavigator}

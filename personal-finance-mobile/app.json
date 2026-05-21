@@ -8,11 +8,15 @@
     "userInterfaceStyle": "light",
     "assetBundlePatterns": ["**/*"],
     "android": {
+      "icon": "./assets/app-icon.png",
       "package": "com.personalfinance.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon.png",
         "backgroundColor": "#ffffff"
       }
+    },
+    "ios": {
+      "icon": "./assets/app-icon.png"
     },
     "plugins": ["expo-asset", "expo-font"]
   }
