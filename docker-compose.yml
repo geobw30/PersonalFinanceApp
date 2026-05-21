@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: ./PersonalFinanceApi
+      dockerfile: Dockerfile
+    container_name: personal-finance-api
+    extra_hosts:
+      - "dockerhost:host-gateway"
+    environment:
+      PORT: "8080"
+      DisableHttpsRedirection: "true"
+      ConnectionStrings__DefaultConnection: "Server=dockerhost,1433;Database=PersonalFinanceDb;User Id=sa;Password=3N73ri2e-;TrustServerCertificate=True;MultipleActiveResultSets=true"
+      Cors__AllowedOrigins__0: "http://localhost:5173"
+    ports:
+      - "5254:8080"
+
+  web:
+    build:
+      context: ./personal-finance-client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "http://localhost:5254/api"
+    container_name: personal-finance-web
+    depends_on:
+      - api
+    environment:
+      PORT: "4173"
+    ports:
+      - "5173:4173"
