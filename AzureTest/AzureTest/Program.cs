@@ -23,7 +23,7 @@ try
         {
             while (reader.Read())
             {
-                Console.WriteLine($"Database: {reader.GetString(0)}");
+                Console.WriteLine($"Database: {reader.GetString(0)}, yeah!!");
             }
         }
     }
