@@ -9,7 +9,7 @@ services:
     environment:
       PORT: "8080"
       DisableHttpsRedirection: "true"
-      ConnectionStrings__DefaultConnection: "Server=dockerhost,1433;Database=PersonalFinanceDb;User Id=sa;Password=3N73ri2e-;TrustServerCertificate=True;MultipleActiveResultSets=true"
+      ConnectionStrings__DefaultConnection: "Server=tcp:mssql-azure-pfa.database.windows.net,1433;Initial Catalog=PersonalFinanceDb;Persist Security Info=False;User ID=geobw30;Password=3N73ri2e-;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"
       Cors__AllowedOrigins__0: "http://localhost:5173"
     ports:
       - "5254:8080"
