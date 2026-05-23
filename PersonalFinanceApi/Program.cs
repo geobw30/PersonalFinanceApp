@@ -1,3 +1,5 @@
+using System;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using PersonalFinanceApi.Data;
@@ -19,9 +21,14 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add DB Context
+// Add DB Context with Azure SQL resiliency
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null)));
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -40,6 +47,33 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    app.Urls.Add($"http://0.0.0.0:{port}");
+}
+
+// Run migrations as a separate release process if requested.
+if (args.Any(arg => string.Equals(arg, "--migrate", StringComparison.OrdinalIgnoreCase)))
+{
+    using var scope = app.Services.CreateScope();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>>();
+
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+        await context.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully in release phase.");
+        return;
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while applying database migrations in release phase.");
+        throw;
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -54,23 +88,11 @@ if (!disableHttpsRedirection)
 }
 app.UseCors("AllowReactApp");
 app.UseAuthorization();
+app.MapGet("/health", () => Results.Ok("Healthy"));
+app.MapGet("/ready", async (ApplicationDbContext db) =>
+    await db.Database.CanConnectAsync()
+        ? Results.Ok("Ready")
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
 app.MapControllers();
-
-// Seed the database
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var context = services.GetRequiredService<ApplicationDbContext>();
-        await context.Database.MigrateAsync();
-        await SeedData.Initialize(context);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
-}
 
 app.Run();

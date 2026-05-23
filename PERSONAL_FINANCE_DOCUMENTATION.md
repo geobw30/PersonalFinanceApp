@@ -898,6 +898,10 @@ public class Income
    ```bash
    dotnet ef database update
    ```
+   Or run the API migration release mode separately:
+   ```bash
+   dotnet run --project PersonalFinanceApi/PersonalFinanceApi.csproj -- --migrate
+   ```
 4. Run the API:
    ```bash
    dotnet run

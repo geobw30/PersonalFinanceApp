@@ -1,3 +1,9 @@
 build:
   docker:
     web: PersonalFinanceApi/Dockerfile
+
+release:
+  command:
+    - dotnet
+    - PersonalFinanceApi.dll
+    - --migrate

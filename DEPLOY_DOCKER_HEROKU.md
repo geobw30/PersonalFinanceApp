@@ -53,6 +53,9 @@ heroku config:set \
 	-a personal-finance-api-prod
 ```
 
+> The API container now uses Heroku release phase migration handling. When `heroku container:release` runs, the container executes `dotnet PersonalFinanceApi.dll --migrate` first to apply EF Core migrations before starting the web process.
+
+
 ## 4) Deploy Web Container to Heroku
 
 Create a second Heroku app for the frontend:
