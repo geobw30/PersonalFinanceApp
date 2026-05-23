@@ -21,6 +21,7 @@ public class ExpensesController : ControllerBase
     public async Task<ActionResult<IEnumerable<Expense>>> GetExpenses()
     {
         return await _context.Expenses
+            .AsNoTracking()
             .Include(e => e.Category)
             .Include(e => e.SubCategory)
             .OrderByDescending(e => e.Date)
@@ -31,6 +32,7 @@ public class ExpensesController : ControllerBase
     public async Task<ActionResult<Expense>> GetExpense(int id)
     {
         var expense = await _context.Expenses
+            .AsNoTracking()
             .Include(e => e.Category)
             .Include(e => e.SubCategory)
             .FirstOrDefaultAsync(e => e.Id == id);
@@ -50,6 +52,7 @@ public class ExpensesController : ControllerBase
         var endDate = startDate.AddMonths(1);
 
         return await _context.Expenses
+            .AsNoTracking()
             .Include(e => e.Category)
             .Include(e => e.SubCategory)
             .Where(e => e.Date >= startDate && e.Date < endDate)
@@ -64,6 +67,7 @@ public class ExpensesController : ControllerBase
         var endDate = startDate.AddMonths(1);
 
         var expenses = await _context.Categories
+            .AsNoTracking()
             .Select(c => new
             {
                 CategoryId = c.Id,
@@ -75,6 +79,7 @@ public class ExpensesController : ControllerBase
             .ToListAsync();
 
         var budgets = await _context.Budgets
+            .AsNoTracking()
             .Where(b => b.StartDate <= endDate && b.EndDate >= startDate)
             .ToDictionaryAsync(b => b.CategoryId, b => b.Amount);
 
@@ -96,29 +101,30 @@ public class ExpensesController : ControllerBase
         var startDate = new DateTime(year, month, 1);
         var endDate = startDate.AddMonths(1);
 
-        // Load all expenses for the month with their category and subcategory
-        var rawExpenses = await _context.Expenses
-            .Include(e => e.Category)
-            .Include(e => e.SubCategory)
+        var expenses = await _context.Expenses
+            .AsNoTracking()
             .Where(e => e.Date >= startDate && e.Date < endDate)
+            .Select(e => new
+            {
+                e.CategoryId,
+                CategoryName = e.Category != null ? e.Category.Name : string.Empty,
+                e.SubCategoryId,
+                SubCategoryName = e.SubCategory != null ? e.SubCategory.Name : null,
+                e.Amount
+            })
             .ToListAsync();
-
-        var expenses = rawExpenses.Select(e => new
-        {
-            e.CategoryId,
-            CategoryName = e.Category?.Name ?? string.Empty,
-            e.SubCategoryId,
-            SubCategoryName = e.SubCategory?.Name,
-            e.Amount
-        }).ToList();
 
         // Load budgets active in this month — use strict < on endDate to avoid bleeding into the next period
         var budgets = await _context.Budgets
+            .AsNoTracking()
             .Where(b => b.StartDate < endDate && b.EndDate >= startDate)
             .ToDictionaryAsync(b => b.CategoryId, b => b.Amount);
 
         // Load all categories
-        var categories = await _context.Categories.ToListAsync();
+        var categories = await _context.Categories
+            .AsNoTracking()
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
 
         var report = categories
             .Select(cat =>
