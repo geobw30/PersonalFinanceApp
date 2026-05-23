@@ -17,20 +17,13 @@ buildscript {
     dependencies {
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25')
     }
 }
 
 apply plugin: "com.facebook.react.rootproject"
 
 allprojects {
-    // Suppress Kotlin Compose version compatibility warning globally
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
-        kotlinOptions {
-            freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=true"]
-        }
-    }
-    
     repositories {
         maven {
             // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
