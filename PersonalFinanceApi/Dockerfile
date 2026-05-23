@@ -14,4 +14,4 @@ WORKDIR /app
 COPY --from=build /app/publish .
 
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "dotnet PersonalFinanceApi.dll --urls http://0.0.0.0:${PORT:-8080}"]
+ENTRYPOINT ["dotnet", "PersonalFinanceApi.dll"]
