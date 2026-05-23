@@ -19,8 +19,12 @@ public class FinancialSummaryController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<object>> GetFinancialSummary()
     {
-        var totalInvestments = await _context.Investments.SumAsync(i => i.CurrentValue);
-        var totalSavings = await _context.Savings.SumAsync(s => s.CurrentAmount);
+        var totalInvestments = await _context.Investments
+            .AsNoTracking()
+            .SumAsync(i => i.CurrentValue);
+        var totalSavings = await _context.Savings
+            .AsNoTracking()
+            .SumAsync(s => s.CurrentAmount);
 
         var now = DateTime.UtcNow;
         var startOfMonth = new DateTime(now.Year, now.Month, 1);
@@ -29,15 +33,18 @@ public class FinancialSummaryController : ControllerBase
         var endOfYear = startOfYear.AddYears(1);
 
         var monthlyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.Date >= startOfMonth && i.Date < endOfMonth)
             .SumAsync(i => i.Amount);
 
         var yearlyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.Date >= startOfYear && i.Date < endOfYear)
             .SumAsync(i => i.Amount);
 
         // Add recurring monthly incomes
         var recurringMonthlyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "monthly")
             .SumAsync(i => i.Amount);
 
@@ -46,6 +53,7 @@ public class FinancialSummaryController : ControllerBase
 
         // Add recurring weekly incomes
         var recurringWeeklyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "weekly")
             .SumAsync(i => i.Amount);
 
@@ -54,6 +62,7 @@ public class FinancialSummaryController : ControllerBase
 
         // Add recurring annual incomes
         var recurringAnnualIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "annually")
             .SumAsync(i => i.Amount);
 
@@ -79,19 +88,23 @@ public class FinancialSummaryController : ControllerBase
         var endDate = startDate.AddMonths(1);
 
         var totalInvestments = await _context.Investments
+            .AsNoTracking()
             .Where(i => i.Date < endDate)
             .SumAsync(i => i.CurrentValue);
 
         var totalSavings = await _context.Savings
+            .AsNoTracking()
             .Where(s => s.Date < endDate)
             .SumAsync(s => s.CurrentAmount);
 
         var monthlyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.Date >= startDate && i.Date < endDate)
             .SumAsync(i => i.Amount);
 
         // Add recurring monthly incomes
         var recurringMonthlyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "monthly" && i.Date <= endDate)
             .SumAsync(i => i.Amount);
 
@@ -99,6 +112,7 @@ public class FinancialSummaryController : ControllerBase
 
         // Add recurring weekly incomes
         var recurringWeeklyIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "weekly" && i.Date <= endDate)
             .SumAsync(i => i.Amount);
 
@@ -106,6 +120,7 @@ public class FinancialSummaryController : ControllerBase
 
         // Add portion of annual incomes
         var recurringAnnualIncome = await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.IsRecurring && i.Frequency == "annually" && i.Date <= endDate)
             .SumAsync(i => i.Amount);
 

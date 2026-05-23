@@ -63,9 +63,28 @@ public class ApplicationDbContext : DbContext
             .Property(b => b.Amount)
             .HasColumnType("decimal(18,2)");
 
+        // Add query indexes for common date-based filters and sorting.
+        modelBuilder.Entity<Budget>()
+            .HasIndex(b => new { b.StartDate, b.EndDate });
+
+        modelBuilder.Entity<Budget>()
+            .HasIndex(b => new { b.CategoryId, b.StartDate });
+
         modelBuilder.Entity<Expense>()
             .Property(e => e.Amount)
             .HasColumnType("decimal(18,2)");
+
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => e.Date);
+
+        modelBuilder.Entity<Expense>()
+            .HasIndex(e => new { e.CategoryId, e.Date });
+
+        modelBuilder.Entity<Income>()
+            .HasIndex(i => i.Date);
+
+        modelBuilder.Entity<Income>()
+            .HasIndex(i => new { i.IsRecurring, i.Frequency, i.Date });
 
         // Seed investment types
         modelBuilder.Entity<InvestmentType>().HasData(

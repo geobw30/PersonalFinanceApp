@@ -19,7 +19,10 @@ public class IncomesController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Income>>> GetIncomes()
     {
-        return await _context.Incomes.OrderByDescending(i => i.Date).ToListAsync();
+        return await _context.Incomes
+            .AsNoTracking()
+            .OrderByDescending(i => i.Date)
+            .ToListAsync();
     }
 
     [HttpGet("month/{year}/{month}")]
@@ -29,6 +32,7 @@ public class IncomesController : ControllerBase
         var endDate = startDate.AddMonths(1);
 
         return await _context.Incomes
+            .AsNoTracking()
             .Where(i => i.Date >= startDate && i.Date < endDate)
             .OrderByDescending(i => i.Date)
             .ToListAsync();
@@ -37,7 +41,9 @@ public class IncomesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<Income>> GetIncome(int id)
     {
-        var income = await _context.Incomes.FindAsync(id);
+        var income = await _context.Incomes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.Id == id);
 
         if (income == null)
         {
