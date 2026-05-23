@@ -2,9 +2,11 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ThemeProvider } from "@rneui/themed";
-import { Icon } from "@rneui/themed";
+import { MaterialIcons } from "@expo/vector-icons";
+import * as Font from "expo-font";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Image, Text, View } from "react-native";
+import { useEffect, useState } from "react";
 import type { RootStackParamList, MainTabParamList } from "./src/types";
 
 import HomeScreen from "./src/screens/HomeScreen";
@@ -36,12 +38,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function BrandedHeaderTitle() {
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
       <Image
         source={require("./assets/app-icon.png")}
         style={{ width: 26, height: 26, marginRight: 8, borderRadius: 6 }}
@@ -56,7 +53,7 @@ function BrandedHeaderTitle() {
 function TabNavigator() {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         tabBarShowLabel: true,
         headerTitle: () => <BrandedHeaderTitle />,
         tabBarActiveTintColor: "#1e88e5",
@@ -72,7 +69,7 @@ function TabNavigator() {
         tabBarLabelStyle: {
           fontSize: 11,
         },
-      })}
+      }}
     >
       <Tab.Screen
         name="Home"
@@ -80,7 +77,7 @@ function TabNavigator() {
         options={{
           title: "Dashboard",
           tabBarIcon: ({ color }) => (
-            <Icon name="dashboard" type="material" size={22} color={color} />
+            <MaterialIcons name="dashboard" size={22} color={color} />
           ),
         }}
       />
@@ -89,7 +86,7 @@ function TabNavigator() {
         component={ExpensesScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="receipt" type="material" size={22} color={color} />
+            <MaterialIcons name="receipt" size={22} color={color} />
           ),
         }}
       />
@@ -98,12 +95,7 @@ function TabNavigator() {
         component={BudgetsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon
-              name="account-balance"
-              type="material"
-              size={22}
-              color={color}
-            />
+            <MaterialIcons name="account-balance" size={22} color={color} />
           ),
         }}
       />
@@ -112,7 +104,7 @@ function TabNavigator() {
         component={FinanceScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="savings" type="material" size={22} color={color} />
+            <MaterialIcons name="savings" size={22} color={color} />
           ),
         }}
       />
@@ -121,7 +113,7 @@ function TabNavigator() {
         component={ReportsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="report" type="material" size={22} color={color} />
+            <MaterialIcons name="report" size={22} color={color} />
           ),
         }}
       />
@@ -130,7 +122,7 @@ function TabNavigator() {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Icon name="settings" type="material" size={22} color={color} />
+            <MaterialIcons name="settings" size={22} color={color} />
           ),
         }}
       />
@@ -139,6 +131,18 @@ function TabNavigator() {
 }
 
 export default function App() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    Font.loadAsync(MaterialIcons.font)
+      .catch(() => {})
+      .finally(() => setFontsLoaded(true));
+  }, []);
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1 }} />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
