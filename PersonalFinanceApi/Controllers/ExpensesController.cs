@@ -163,6 +163,217 @@ public class ExpensesController : ControllerBase
         return Ok(report);
     }
 
+    [HttpGet("trends/monthly/{months}")]
+    public async Task<ActionResult<IEnumerable<MonthlySpendingTrendDto>>> GetMonthlySpendingTrends(int months)
+    {
+        if (months < 1 || months > 24)
+        {
+            months = 6;
+        }
+
+        var now = DateTime.UtcNow;
+        var targetStart = new DateTime(now.Year, now.Month, 1);
+        var startDate = targetStart.AddMonths(-(months - 1));
+        var endDate = targetStart.AddMonths(1);
+
+        var monthlyTotals = await _context.Expenses
+            .AsNoTracking()
+            .Where(e => e.Date >= startDate && e.Date < endDate)
+            .GroupBy(e => new { e.Date.Year, e.Date.Month })
+            .Select(g => new
+            {
+                Year = g.Key.Year,
+                Month = g.Key.Month,
+                TotalAmount = g.Sum(e => e.Amount)
+            })
+            .ToListAsync();
+
+        var totalsByKey = monthlyTotals.ToDictionary(x => x.Year * 100 + x.Month, x => x.TotalAmount);
+
+        var result = Enumerable.Range(0, months)
+            .Select(i => targetStart.AddMonths(-months + i))
+            .Select((month, index) =>
+            {
+                var key = month.Year * 100 + month.Month;
+                var totalAmount = totalsByKey.TryGetValue(key, out var amount) ? amount : 0m;
+                var previousKey = month.AddMonths(-1).Year * 100 + month.AddMonths(-1).Month;
+                var previousTotal = totalsByKey.TryGetValue(previousKey, out var prevAmount) ? prevAmount : 0m;
+                var changePercent = previousTotal == 0m
+                    ? (totalAmount == 0m ? 0m : 100m)
+                    : Math.Round((totalAmount - previousTotal) / previousTotal * 100m, 2);
+
+                return new MonthlySpendingTrendDto
+                {
+                    Month = month,
+                    TotalAmount = totalAmount,
+                    ChangePercent = changePercent
+                };
+            })
+            .ToList();
+
+        return Ok(result);
+    }
+
+    [HttpGet("trends/categories/{months}")]
+    public async Task<ActionResult<IEnumerable<CategorySpendingTrendDto>>> GetCategorySpendingTrends(int months)
+    {
+        if (months < 2 || months > 24)
+        {
+            months = 6;
+        }
+
+        var now = DateTime.UtcNow;
+        var currentMonthStart = new DateTime(now.Year, now.Month, 1);
+        var currentMonthEnd = currentMonthStart.AddMonths(1);
+        var previousMonthStart = currentMonthStart.AddMonths(-1);
+        var previousMonthEnd = currentMonthStart;
+        var historyStart = currentMonthStart.AddMonths(-months);
+
+        var categoryGroups = await _context.Expenses
+            .AsNoTracking()
+            .Where(e => e.Date >= historyStart && e.Date < currentMonthEnd)
+            .GroupBy(e => new { e.CategoryId, e.Date.Year, e.Date.Month })
+            .Select(g => new
+            {
+                g.Key.CategoryId,
+                g.Key.Year,
+                g.Key.Month,
+                TotalAmount = g.Sum(e => e.Amount)
+            })
+            .ToListAsync();
+
+        var currentTotals = categoryGroups
+            .Where(x => x.Year == currentMonthStart.Year && x.Month == currentMonthStart.Month)
+            .ToDictionary(x => x.CategoryId, x => x.TotalAmount);
+
+        var previousTotals = categoryGroups
+            .Where(x => x.Year == previousMonthStart.Year && x.Month == previousMonthStart.Month)
+            .ToDictionary(x => x.CategoryId, x => x.TotalAmount);
+
+        var monthlyAverages = categoryGroups
+            .Where(x => x.Year < currentMonthStart.Year || x.Month < currentMonthStart.Month)
+            .GroupBy(x => x.CategoryId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.TotalAmount) / months);
+
+        var categories = await _context.Categories
+            .AsNoTracking()
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+
+        var results = categories
+            .Select(c =>
+            {
+                var currentAmount = currentTotals.GetValueOrDefault(c.Id);
+                var previousAmount = previousTotals.GetValueOrDefault(c.Id);
+                var averageAmount = monthlyAverages.GetValueOrDefault(c.Id);
+                var changePercent = previousAmount == 0m
+                    ? (currentAmount == 0m ? 0m : 100m)
+                    : Math.Round((currentAmount - previousAmount) / previousAmount * 100m, 2);
+
+                return new CategorySpendingTrendDto
+                {
+                    CategoryId = c.Id,
+                    CategoryName = c.Name,
+                    CurrentMonthAmount = currentAmount,
+                    PreviousMonthAmount = previousAmount,
+                    AverageMonthlyAmount = Math.Round(averageAmount, 2),
+                    ChangePercent = changePercent
+                };
+            })
+            .Where(r => r.CurrentMonthAmount > 0m || r.PreviousMonthAmount > 0m)
+            .OrderByDescending(r => r.ChangePercent)
+            .ThenByDescending(r => r.CurrentMonthAmount)
+            .ToList();
+
+        return Ok(results);
+    }
+
+    [HttpGet("predictive-budget/{year}/{month}")]
+    public async Task<ActionResult<IEnumerable<PredictiveBudgetDto>>> GetPredictiveBudget(int year, int month)
+    {
+        var targetStart = new DateTime(year, month, 1);
+        var targetEnd = targetStart.AddMonths(1);
+        var historyStart = targetStart.AddMonths(-3);
+        var now = DateTime.UtcNow;
+        var isCurrentMonth = now.Year == year && now.Month == month;
+        var daysPassed = isCurrentMonth ? Math.Max(1, (now - targetStart).Days + 1) : DateTime.DaysInMonth(year, month);
+        var daysInMonth = DateTime.DaysInMonth(year, month);
+
+        var expenseGroups = await _context.Expenses
+            .AsNoTracking()
+            .Where(e => e.Date >= historyStart && e.Date < targetEnd)
+            .GroupBy(e => new { e.CategoryId, Year = e.Date.Year, Month = e.Date.Month })
+            .Select(g => new
+            {
+                g.Key.CategoryId,
+                g.Key.Year,
+                g.Key.Month,
+                TotalAmount = g.Sum(e => e.Amount)
+            })
+            .ToListAsync();
+
+        var spendingByCategory = expenseGroups
+            .GroupBy(x => x.CategoryId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var budgets = await _context.Budgets
+            .AsNoTracking()
+            .Where(b => b.StartDate < targetEnd && b.EndDate >= targetStart)
+            .ToDictionaryAsync(b => b.CategoryId, b => b.Amount);
+
+        var categories = await _context.Categories
+            .AsNoTracking()
+            .Select(c => new { c.Id, c.Name })
+            .ToListAsync();
+
+        var results = categories.Select(c =>
+        {
+            spendingByCategory.TryGetValue(c.Id, out var entries);
+            var actualThisMonth = entries?.FirstOrDefault(x => x.Year == year && x.Month == month)?.TotalAmount ?? 0m;
+            var historicalTotal = entries?
+                .Where(x => x.Year * 100 + x.Month < year * 100 + month)
+                .Sum(x => x.TotalAmount) ?? 0m;
+            var averageHistorical = historicalTotal / 3m;
+            var predictedSpend = isCurrentMonth
+                ? actualThisMonth / daysPassed * daysInMonth
+                : averageHistorical;
+            if (predictedSpend < 0m) predictedSpend = 0m;
+            if (predictedSpend == 0m && averageHistorical > 0m)
+            {
+                predictedSpend = averageHistorical;
+            }
+            predictedSpend = Math.Round(predictedSpend, 2);
+
+            budgets.TryGetValue(c.Id, out var budgetAmount);
+            var suggestedBudget = budgetAmount > 0m
+                ? Math.Max(budgetAmount, predictedSpend)
+                : predictedSpend;
+            suggestedBudget = Math.Round(suggestedBudget, 2);
+
+            var outlook = budgetAmount <= 0m
+                ? "No budget set"
+                : predictedSpend > budgetAmount
+                    ? "At risk"
+                    : "On track";
+
+            return new PredictiveBudgetDto
+            {
+                CategoryId = c.Id,
+                CategoryName = c.Name,
+                BudgetAmount = budgetAmount,
+                ActualToDate = actualThisMonth,
+                PredictedSpend = predictedSpend,
+                SuggestedBudget = suggestedBudget,
+                Outlook = outlook
+            };
+        })
+        .Where(r => r.BudgetAmount > 0m || r.PredictedSpend > 0m)
+        .OrderByDescending(r => r.PredictedSpend)
+        .ToList();
+
+        return Ok(results);
+    }
+
     [HttpPost]
     public async Task<ActionResult<Expense>> CreateExpense(CreateExpenseDto createExpenseDto)
     {

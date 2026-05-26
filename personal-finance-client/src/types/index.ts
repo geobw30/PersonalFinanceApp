@@ -80,6 +80,44 @@ export interface BudgetReportItem {
   subCategories: BudgetReportSubCategory[];
 }
 
+export interface MonthlySpendingTrend {
+  month: string | Date;
+  totalAmount: number;
+  changePercent: number;
+}
+
+export interface CategorySpendingTrend {
+  categoryId: number;
+  categoryName: string;
+  currentMonthAmount: number;
+  previousMonthAmount: number;
+  averageMonthlyAmount: number;
+  changePercent: number;
+}
+
+export interface PredictiveBudgetItem {
+  categoryId: number;
+  categoryName: string;
+  budgetAmount: number;
+  actualToDate: number;
+  predictedSpend: number;
+  suggestedBudget: number;
+  outlook: string;
+}
+
+export interface SavingGoalProgress {
+  id: number;
+  name: string;
+  type: string;
+  currentAmount: number;
+  targetAmount?: number;
+  date: string;
+  notes?: string;
+  progressPercent: number;
+  remainingAmount?: number;
+  status: string;
+}
+
 export type TransactionType = 'investment' | 'saving' | 'income';
 
 export interface Investment {

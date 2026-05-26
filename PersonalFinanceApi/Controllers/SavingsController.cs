@@ -93,6 +93,38 @@ public class SavingsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("goals")]
+    public async Task<ActionResult<IEnumerable<SavingGoalProgressDto>>> GetSavingGoals()
+    {
+        var goals = await _context.Savings
+            .AsNoTracking()
+            .OrderByDescending(s => s.Date)
+            .ToListAsync();
+
+        var result = goals.Select(s => new SavingGoalProgressDto
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Type = s.Type,
+            CurrentAmount = s.CurrentAmount,
+            TargetAmount = s.TargetAmount,
+            Date = s.Date,
+            Notes = s.Notes,
+            ProgressPercent = s.TargetAmount.HasValue && s.TargetAmount > 0m
+                ? Math.Round((s.CurrentAmount / s.TargetAmount.Value) * 100m, 2)
+                : 0m,
+            RemainingAmount = s.TargetAmount.HasValue
+                ? Math.Max(s.TargetAmount.Value - s.CurrentAmount, 0m)
+                : null,
+            Status = s.TargetAmount.HasValue
+                ? (s.CurrentAmount >= s.TargetAmount.Value ? "Reached" : "In Progress")
+                : "No target"
+        })
+        .ToList();
+
+        return Ok(result);
+    }
+
     private async Task<bool> SavingExists(int id)
     {
         return await _context.Savings.AnyAsync(e => e.Id == id);

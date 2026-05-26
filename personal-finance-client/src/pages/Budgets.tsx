@@ -363,7 +363,7 @@ export default function Budgets() {
                   fullWidth
                 />
                 <Button type="submit" variant="contained" size="small" sx={{ alignSelf: 'flex-start' }}>
-                  Add Budget
+                  +
                 </Button>
               </Box>
             </Collapse>

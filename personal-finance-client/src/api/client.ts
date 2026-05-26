@@ -6,8 +6,12 @@ import type {
   Expense, 
   BudgetSummary,
   BudgetReportItem,
+  MonthlySpendingTrend,
+  CategorySpendingTrend,
+  PredictiveBudgetItem,
   Investment,
   Saving,
+  SavingGoalProgress,
   Income,
   FinancialSummary,
   InvestmentType,
@@ -111,6 +115,12 @@ export const getMonthlySummary = (year: number, month: number) =>
   apiClient.get<BudgetSummary[]>(`/expenses/summary/${year}/${month}`);
 export const getBudgetReport = (year: number, month: number) =>
   apiClient.get<BudgetReportItem[]>(`/expenses/budget-report/${year}/${month}`);
+export const getMonthlySpendingTrends = (months: number) =>
+  apiClient.get<MonthlySpendingTrend[]>(`/expenses/trends/monthly/${months}`);
+export const getCategorySpendingTrends = (months: number) =>
+  apiClient.get<CategorySpendingTrend[]>(`/expenses/trends/categories/${months}`);
+export const getPredictiveBudget = (year: number, month: number) =>
+  apiClient.get<PredictiveBudgetItem[]>(`/expenses/predictive-budget/${year}/${month}`);
 export const createExpense = (expense: Omit<Expense, 'id'>) =>
   apiClient.post<Expense>('/expenses', expense);
 export const updateExpense = (id: number, expense: Omit<Expense, 'id'>) =>
@@ -130,6 +140,7 @@ export const deleteInvestment = (id: number) =>
 
 // Savings API
 export const getSavings = () => apiClient.get<Saving[]>('/savings');
+export const getSavingGoals = () => apiClient.get<SavingGoalProgress[]>('/savings/goals');
 export const getSavingById = (id: number) => apiClient.get<Saving>(`/savings/${id}`);
 export const createSaving = (saving: Omit<Saving, 'id'>) =>
   apiClient.post<Saving>('/savings', saving);

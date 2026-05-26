@@ -22,6 +22,8 @@ import { KeyboardArrowDown, KeyboardArrowRight } from "@mui/icons-material";
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -34,8 +36,20 @@ import {
 } from "recharts";
 import { format, startOfWeek, endOfWeek } from "date-fns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { getBudgetReport, getExpensesByMonth } from "../api/client";
-import type { BudgetReportItem, Expense } from "../types";
+import {
+  getBudgetReport,
+  getExpensesByMonth,
+  getMonthlySpendingTrends,
+  getCategorySpendingTrends,
+  getPredictiveBudget,
+} from "../api/client";
+import type {
+  BudgetReportItem,
+  Expense,
+  MonthlySpendingTrend,
+  CategorySpendingTrend,
+  PredictiveBudgetItem,
+} from "../types";
 
 const COLORS = [
   "#1976d2",
@@ -236,6 +250,13 @@ function CategoryRow({
 export default function Reports() {
   const [report, setReport] = useState<BudgetReportItem[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [trendData, setTrendData] = useState<MonthlySpendingTrend[]>([]);
+  const [categoryTrends, setCategoryTrends] = useState<CategorySpendingTrend[]>(
+    [],
+  );
+  const [predictiveBudgets, setPredictiveBudgets] = useState<
+    PredictiveBudgetItem[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -252,18 +273,38 @@ export default function Reports() {
         selectedDate.getFullYear(),
         selectedDate.getMonth() + 1,
       ),
+      getMonthlySpendingTrends(6),
+      getCategorySpendingTrends(6),
+      getPredictiveBudget(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth() + 1,
+      ),
     ])
-      .then(([{ data: reportData }, { data: expenseData }]) => {
-        if (isMounted) {
-          setReport(reportData);
-          setExpenses(expenseData);
-        }
-      })
+      .then(
+        ([
+          { data: reportData },
+          { data: expenseData },
+          { data: trendData },
+          { data: categoryTrendData },
+          { data: predictiveBudgetData },
+        ]) => {
+          if (isMounted) {
+            setReport(reportData);
+            setExpenses(expenseData);
+            setTrendData(trendData);
+            setCategoryTrends(categoryTrendData);
+            setPredictiveBudgets(predictiveBudgetData);
+          }
+        },
+      )
       .catch(() => {
         if (isMounted) {
           setError("Failed to load report data");
           setReport([]);
           setExpenses([]);
+          setTrendData([]);
+          setCategoryTrends([]);
+          setPredictiveBudgets([]);
         }
       })
       .finally(() => {
@@ -288,6 +329,19 @@ export default function Reports() {
     )
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 12);
+
+  const totalPredictedSpend = predictiveBudgets.reduce(
+    (sum, item) => sum + item.predictedSpend,
+    0,
+  );
+  const totalSuggestedBudget = predictiveBudgets.reduce(
+    (sum, item) => sum + item.suggestedBudget,
+    0,
+  );
+  const riskCount = predictiveBudgets.filter(
+    (item) => item.outlook === "At risk",
+  ).length;
+  const topCategoryTrends = categoryTrends.slice(0, 4);
 
   return (
     <Box
@@ -363,6 +417,173 @@ export default function Reports() {
               </Grid>
             ))}
           </Grid>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={7}>
+              <Paper elevation={2} sx={{ p: 3, minHeight: 360 }}>
+                <Typography variant="h6" gutterBottom>
+                  6-Month Spending Trend
+                </Typography>
+                {trendData.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ mt: 4 }}>
+                    Trend data is not available yet.
+                  </Typography>
+                ) : (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart data={trendData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="month"
+                        tickFormatter={(value) =>
+                          new Date(value).toLocaleDateString("en-UG", {
+                            month: "short",
+                          })
+                        }
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis
+                        tickFormatter={(value) => value.toLocaleString("en-UG")}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => [
+                          formatCurrency(value),
+                          "Spent",
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="totalAmount"
+                        stroke="#1976d2"
+                        strokeWidth={3}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={5}>
+              <Paper elevation={2} sx={{ p: 3, minHeight: 360 }}>
+                <Typography variant="h6" gutterBottom>
+                  Category Trend Highlights
+                </Typography>
+                {topCategoryTrends.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ mt: 4 }}>
+                    Category trend data is not available yet.
+                  </Typography>
+                ) : (
+                  <Box sx={{ display: "grid", gap: 2 }}>
+                    {topCategoryTrends.map((trend) => (
+                      <Paper
+                        key={trend.categoryId}
+                        variant="outlined"
+                        sx={{ p: 2 }}
+                      >
+                        <Typography fontWeight="bold">
+                          {trend.categoryName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {trend.currentMonthAmount.toLocaleString("en-UG")}{" "}
+                          spent this month
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color={
+                            trend.changePercent >= 0
+                              ? "success.main"
+                              : "error.main"
+                          }
+                        >
+                          {trend.changePercent >= 0 ? "+" : ""}
+                          {trend.changePercent}% vs last month
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+
+          <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              Predictive Budgeting
+            </Typography>
+            {predictiveBudgets.length === 0 ? (
+              <Typography color="text.secondary" sx={{ mt: 4 }}>
+                No predictive budget recommendations are available yet.
+              </Typography>
+            ) : (
+              <>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 2 }}>
+                  <Paper sx={{ p: 2, minWidth: 180, flex: 1 }}>
+                    <Typography color="text.secondary" variant="body2">
+                      Total Predicted Spend
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold">
+                      {formatCurrency(totalPredictedSpend)}
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, minWidth: 180, flex: 1 }}>
+                    <Typography color="text.secondary" variant="body2">
+                      Total Suggested Budget
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold">
+                      {formatCurrency(totalSuggestedBudget)}
+                    </Typography>
+                  </Paper>
+                  <Paper sx={{ p: 2, minWidth: 180, flex: 1 }}>
+                    <Typography color="text.secondary" variant="body2">
+                      Categories At Risk
+                    </Typography>
+                    <Typography variant="h6" fontWeight="bold">
+                      {riskCount}
+                    </Typography>
+                  </Paper>
+                </Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
+                        <TableCell>Category</TableCell>
+                        <TableCell align="right">Budget</TableCell>
+                        <TableCell align="right">Predicted</TableCell>
+                        <TableCell align="right">Suggested</TableCell>
+                        <TableCell align="center">Outlook</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {predictiveBudgets.map((item) => (
+                        <TableRow key={item.categoryId}>
+                          <TableCell>{item.categoryName}</TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.budgetAmount)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.predictedSpend)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.suggestedBudget)}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={item.outlook}
+                              size="small"
+                              color={
+                                item.outlook === "At risk" ? "error" : "success"
+                              }
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </>
+            )}
+          </Paper>
 
           {/* Budget vs Actual + Top Sub Category side by side */}
           <Grid container spacing={2}>

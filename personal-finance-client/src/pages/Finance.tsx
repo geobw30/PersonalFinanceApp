@@ -14,7 +14,6 @@ import {
   ListItem,
   ListItemText,
   IconButton,
-  Tooltip,
   LinearProgress,
 } from "@mui/material";
 import {
@@ -25,7 +24,6 @@ import {
   Savings as SavingsIcon,
   Payments as IncomeIcon,
 } from "@mui/icons-material";
-import { format } from "date-fns";
 import type {
   Investment,
   Saving,
@@ -590,12 +588,59 @@ export default function Finance() {
 
         {/* Savings Tab */}
         <TabPanel value={tabValue} index={1}>
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 2,
+              mb: 2,
+            }}
+          >
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setAddSavingDialogOpen(true)}
             ></Button>
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Paper sx={{ p: 2, minWidth: 180 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Savings goals in progress
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {
+                    savings.filter((s) => s.targetAmount && s.targetAmount > 0)
+                      .length
+                  }
+                </Typography>
+              </Paper>
+              <Paper sx={{ p: 2, minWidth: 220 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Average goal completion
+                </Typography>
+                <Typography variant="h6" fontWeight="bold">
+                  {savings.filter((s) => s.targetAmount && s.targetAmount > 0)
+                    .length > 0
+                    ? `${(
+                        savings
+                          .filter((s) => s.targetAmount && s.targetAmount > 0)
+                          .reduce(
+                            (sum, s) =>
+                              sum +
+                              Math.min(
+                                100,
+                                (s.currentAmount / (s.targetAmount ?? 1)) * 100,
+                              ),
+                            0,
+                          ) /
+                        savings.filter(
+                          (s) => s.targetAmount && s.targetAmount > 0,
+                        ).length
+                      ).toFixed(0)}%`
+                    : "—"}
+                </Typography>
+              </Paper>
+            </Box>
           </Box>
           <List>
             {savings.map((saving) => (

@@ -396,7 +396,7 @@ export default function Expenses() {
                 startIcon={<AddIcon />}
                 onClick={() => setAddDialogOpen(true)}
               >
-                Add
+                
               </Button>
             </Box>
           </Box>
