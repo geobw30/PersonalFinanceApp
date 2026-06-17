@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   RefreshControl,
@@ -156,231 +156,246 @@ export default function FinanceScreen() {
         {/* Income list */}
         {activeTab === "Income" &&
           (incomes.length === 0 ? (
-            <Text style={styles.empty}>No income entries yet.</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>No income entries yet.</Text>
+              <Text style={styles.emptyHint}>Tap the + button to add income</Text>
+            </View>
           ) : (
-            incomes.map((income) => (
-              <Card key={income.id} containerStyle={styles.itemCard}>
-                <View style={styles.rowBetween}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>{income.source}</Text>
-                    <Text style={styles.itemMeta}>
-                      {income.type} ·{" "}
-                      {format(new Date(income.date), "dd MMM yyyy")}
-                    </Text>
-                    {income.isRecurring && (
+            <>
+              {incomes.map((income) => (
+                <Card key={income.id} containerStyle={styles.itemCard}>
+                  <View style={styles.rowBetween}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>{income.source}</Text>
                       <Text style={styles.itemMeta}>
-                        Recurring
-                        {income.frequency ? ` · ${income.frequency}` : ""}
+                        {income.type} ·{" "}
+                        {format(new Date(income.date), "dd MMM yyyy")}
                       </Text>
-                    )}
-                    {income.notes ? (
-                      <Text style={styles.itemMeta}>{income.notes}</Text>
-                    ) : null}
-                  </View>
-                  <View style={styles.itemActions}>
-                    <Text style={[styles.itemAmount, { color: "#2e7d32" }]}>
-                      {formatCurrency(income.amount)}
-                    </Text>
-                    <View style={styles.buttonRow}>
-                      <Button
-                        title="Edit"
-                        type="outline"
-                        titleStyle={styles.actionButtonTitle}
-                        buttonStyle={styles.actionButton}
-                        containerStyle={styles.actionButtonContainer}
-                        onPress={() =>
-                          navigation.navigate("EditIncome", { income })
-                        }
-                      />
-                      <Button
-                        title="Delete"
-                        type="outline"
-                        titleStyle={[
-                          styles.actionButtonTitle,
-                          styles.deleteButtonTitle,
-                        ]}
-                        buttonStyle={[styles.actionButton, styles.deleteButton]}
-                        containerStyle={styles.actionButtonContainer}
-                        onPress={() =>
-                          confirmDelete("income", async () => {
-                            await deleteIncome(income.id);
-                            void loadData(false);
-                          })
-                        }
-                      />
+                      {income.isRecurring && (
+                        <Text style={styles.itemMeta}>
+                          Recurring
+                          {income.frequency ? ` · ${income.frequency}` : ""}
+                        </Text>
+                      )}
+                      {income.notes ? (
+                        <Text style={styles.itemMeta}>{income.notes}</Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.itemActions}>
+                      <Text style={[styles.itemAmount, { color: "#2e7d32" }]}>
+                        {formatCurrency(income.amount)}
+                      </Text>
+                      <View style={styles.buttonRow}>
+                        <Button
+                          title="Edit"
+                          type="outline"
+                          titleStyle={styles.actionButtonTitle}
+                          buttonStyle={styles.actionButton}
+                          containerStyle={styles.actionButtonContainer}
+                          onPress={() =>
+                            navigation.navigate("EditIncome", { income })
+                          }
+                        />
+                        <Button
+                          title="Delete"
+                          type="outline"
+                          titleStyle={[
+                            styles.actionButtonTitle,
+                            styles.deleteButtonTitle,
+                          ]}
+                          buttonStyle={[styles.actionButton, styles.deleteButton]}
+                          containerStyle={styles.actionButtonContainer}
+                          onPress={() =>
+                            confirmDelete("income", async () => {
+                              await deleteIncome(income.id);
+                              void loadData(false);
+                            })
+                          }
+                        />
+                      </View>
                     </View>
                   </View>
-                </View>
-              </Card>
-            ))
+                </Card>
+              ))}
+            </>
           ))}
 
         {/* Savings list */}
         {activeTab === "Savings" &&
           (savings.length === 0 ? (
-            <Text style={styles.empty}>No savings entries yet.</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>No savings entries yet.</Text>
+              <Text style={styles.emptyHint}>Tap the + button to add savings</Text>
+            </View>
           ) : (
-            savings.map((saving) => {
-              const progress =
-                saving.targetAmount && saving.targetAmount > 0
-                  ? Math.min(
-                      (saving.currentAmount / saving.targetAmount) * 100,
-                      100,
-                    )
-                  : null;
-              return (
-                <Card key={saving.id} containerStyle={styles.itemCard}>
-                  <View style={styles.rowBetween}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemTitle}>{saving.name}</Text>
-                      <Text style={styles.itemMeta}>
-                        {saving.type} ·{" "}
-                        {format(new Date(saving.date), "dd MMM yyyy")}
-                      </Text>
-                      {saving.interestRate != null ? (
+            <>
+              {savings.map((saving) => {
+                const progress =
+                  saving.targetAmount && saving.targetAmount > 0
+                    ? Math.min(
+                        (saving.currentAmount / saving.targetAmount) * 100,
+                        100,
+                      )
+                    : null;
+                return (
+                  <Card key={saving.id} containerStyle={styles.itemCard}>
+                    <View style={styles.rowBetween}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemTitle}>{saving.name}</Text>
                         <Text style={styles.itemMeta}>
-                          Rate: {saving.interestRate}%
+                          {saving.type} ·{" "}
+                          {format(new Date(saving.date), "dd MMM yyyy")}
                         </Text>
-                      ) : null}
-                      {saving.notes ? (
-                        <Text style={styles.itemMeta}>{saving.notes}</Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.itemActions}>
-                      <Text style={[styles.itemAmount, { color: "#e65100" }]}>
-                        {formatCurrency(saving.currentAmount)}
-                      </Text>
-                      {saving.targetAmount ? (
-                        <Text style={styles.itemMeta}>
-                          / {formatCurrency(saving.targetAmount)}
+                        {saving.interestRate != null ? (
+                          <Text style={styles.itemMeta}>
+                            Rate: {saving.interestRate}%
+                          </Text>
+                        ) : null}
+                        {saving.notes ? (
+                          <Text style={styles.itemMeta}>{saving.notes}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.itemActions}>
+                        <Text style={[styles.itemAmount, { color: "#e65100" }]}>
+                          {formatCurrency(saving.currentAmount)}
                         </Text>
-                      ) : null}
-                      <View style={styles.buttonRow}>
-                        <Button
-                          title="Edit"
-                          type="outline"
-                          titleStyle={styles.actionButtonTitle}
-                          buttonStyle={styles.actionButton}
-                          containerStyle={styles.actionButtonContainer}
-                          onPress={() =>
-                            navigation.navigate("EditSaving", { saving })
-                          }
-                        />
-                        <Button
-                          title="Delete"
-                          type="outline"
-                          titleStyle={[
-                            styles.actionButtonTitle,
-                            styles.deleteButtonTitle,
-                          ]}
-                          buttonStyle={[
-                            styles.actionButton,
-                            styles.deleteButton,
-                          ]}
-                          containerStyle={styles.actionButtonContainer}
-                          onPress={() =>
-                            confirmDelete("saving", async () => {
-                              await deleteSaving(saving.id);
-                              void loadData(false);
-                            })
-                          }
-                        />
+                        {saving.targetAmount ? (
+                          <Text style={styles.itemMeta}>
+                            / {formatCurrency(saving.targetAmount)}
+                          </Text>
+                        ) : null}
+                        <View style={styles.buttonRow}>
+                          <Button
+                            title="Edit"
+                            type="outline"
+                            titleStyle={styles.actionButtonTitle}
+                            buttonStyle={styles.actionButton}
+                            containerStyle={styles.actionButtonContainer}
+                            onPress={() =>
+                              navigation.navigate("EditSaving", { saving })
+                            }
+                          />
+                          <Button
+                            title="Delete"
+                            type="outline"
+                            titleStyle={[
+                              styles.actionButtonTitle,
+                              styles.deleteButtonTitle,
+                            ]}
+                            buttonStyle={[
+                              styles.actionButton,
+                              styles.deleteButton,
+                            ]}
+                            containerStyle={styles.actionButtonContainer}
+                            onPress={() =>
+                              confirmDelete("saving", async () => {
+                                await deleteSaving(saving.id);
+                                void loadData(false);
+                              })
+                            }
+                          />
+                        </View>
                       </View>
                     </View>
-                  </View>
-                  {progress !== null && (
-                    <View style={styles.progressTrack}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          { width: `${progress}%` as any },
-                        ]}
-                      />
-                    </View>
-                  )}
-                </Card>
-              );
-            })
+                    {progress !== null && (
+                      <View style={styles.progressTrack}>
+                        <View
+                          style={[
+                            styles.progressFill,
+                            { width: `${progress}%` as any },
+                          ]}
+                        />
+                      </View>
+                    )}
+                  </Card>
+                );
+              })}
+            </>
           ))}
 
         {/* Investments list */}
         {activeTab === "Investments" &&
           (investments.length === 0 ? (
-            <Text style={styles.empty}>No investment entries yet.</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.empty}>No investment entries yet.</Text>
+              <Text style={styles.emptyHint}>Tap the + button to add investments</Text>
+            </View>
           ) : (
-            investments.map((inv) => {
-              const gain = inv.currentValue - inv.amount;
-              return (
-                <Card key={inv.id} containerStyle={styles.itemCard}>
-                  <View style={styles.rowBetween}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemTitle}>{inv.name}</Text>
-                      <Text style={styles.itemMeta}>
-                        {format(new Date(inv.date), "dd MMM yyyy")}
-                      </Text>
-                      <Text style={styles.itemMeta}>
-                        Cost: {formatCurrency(inv.amount)}
-                      </Text>
-                      {inv.returnRate != null ? (
+            <>
+              {investments.map((inv) => {
+                const gain = inv.currentValue - inv.amount;
+                return (
+                  <Card key={inv.id} containerStyle={styles.itemCard}>
+                    <View style={styles.rowBetween}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemTitle}>{inv.name}</Text>
                         <Text style={styles.itemMeta}>
-                          Return: {inv.returnRate}%
+                          {format(new Date(inv.date), "dd MMM yyyy")}
                         </Text>
-                      ) : null}
-                      {inv.notes ? (
-                        <Text style={styles.itemMeta}>{inv.notes}</Text>
-                      ) : null}
-                    </View>
-                    <View style={styles.itemActions}>
-                      <Text style={[styles.itemAmount, { color: "#7b1fa2" }]}>
-                        {formatCurrency(inv.currentValue)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.itemMeta,
-                          { color: gain >= 0 ? "#2e7d32" : "#d32f2f" },
-                        ]}
-                      >
-                        {gain >= 0 ? "+" : ""}
-                        {formatCurrency(gain)}
-                      </Text>
-                      <View style={styles.buttonRow}>
-                        <Button
-                          title="Edit"
-                          type="outline"
-                          titleStyle={styles.actionButtonTitle}
-                          buttonStyle={styles.actionButton}
-                          containerStyle={styles.actionButtonContainer}
-                          onPress={() =>
-                            navigation.navigate("EditInvestment", {
-                              investment: inv,
-                            })
-                          }
-                        />
-                        <Button
-                          title="Delete"
-                          type="outline"
-                          titleStyle={[
-                            styles.actionButtonTitle,
-                            styles.deleteButtonTitle,
+                        <Text style={styles.itemMeta}>
+                          Cost: {formatCurrency(inv.amount)}
+                        </Text>
+                        {inv.returnRate != null ? (
+                          <Text style={styles.itemMeta}>
+                            Return: {inv.returnRate}%
+                          </Text>
+                        ) : null}
+                        {inv.notes ? (
+                          <Text style={styles.itemMeta}>{inv.notes}</Text>
+                        ) : null}
+                      </View>
+                      <View style={styles.itemActions}>
+                        <Text style={[styles.itemAmount, { color: "#7b1fa2" }]}>
+                          {formatCurrency(inv.currentValue)}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.itemMeta,
+                            { color: gain >= 0 ? "#2e7d32" : "#d32f2f" },
                           ]}
-                          buttonStyle={[
-                            styles.actionButton,
-                            styles.deleteButton,
-                          ]}
-                          containerStyle={styles.actionButtonContainer}
-                          onPress={() =>
-                            confirmDelete("investment", async () => {
-                              await deleteInvestment(inv.id);
-                              void loadData(false);
-                            })
-                          }
-                        />
+                        >
+                          {gain >= 0 ? "+" : ""}
+                          {formatCurrency(gain)}
+                        </Text>
+                        <View style={styles.buttonRow}>
+                          <Button
+                            title="Edit"
+                            type="outline"
+                            titleStyle={styles.actionButtonTitle}
+                            buttonStyle={styles.actionButton}
+                            containerStyle={styles.actionButtonContainer}
+                            onPress={() =>
+                              navigation.navigate("EditInvestment", {
+                                investment: inv,
+                              })
+                            }
+                          />
+                          <Button
+                            title="Delete"
+                            type="outline"
+                            titleStyle={[
+                              styles.actionButtonTitle,
+                              styles.deleteButtonTitle,
+                            ]}
+                            buttonStyle={[
+                              styles.actionButton,
+                              styles.deleteButton,
+                            ]}
+                            containerStyle={styles.actionButtonContainer}
+                            onPress={() =>
+                              confirmDelete("investment", async () => {
+                                await deleteInvestment(inv.id);
+                                void loadData(false);
+                              })
+                            }
+                          />
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </Card>
-              );
-            })
+                  </Card>
+                );
+              })}
+            </>
           ))}
 
         <View style={{ height: 80 }} />
@@ -421,7 +436,17 @@ const styles = StyleSheet.create({
   tabActive: { backgroundColor: "#1976d2" },
   tabText: { color: "#666", fontWeight: "600", fontSize: 13 },
   tabTextActive: { color: "#fff" },
-  empty: { textAlign: "center", color: "#999", marginTop: 32, fontSize: 14 },
+  emptyContainer: { alignItems: "center", marginTop: 32 },
+  empty: { textAlign: "center", color: "#999", fontSize: 14 },
+  emptyHint: { textAlign: "center", color: "#888", fontSize: 12, marginTop: 6 },
+  totalCard: { borderRadius: 10, marginHorizontal: 10, backgroundColor: "#f8f9fa" },
+  totalLabel: { textAlign: "center", color: "#666", fontSize: 12 },
+  totalValue: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+  },
   itemCard: { borderRadius: 10, marginHorizontal: 10, marginVertical: 4 },
   rowBetween: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -33,7 +33,7 @@ export default function AddSubCategoryScreen() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (routeCategoryId === 0) {
       void getCategories()
         .then((res) => {
@@ -53,6 +53,7 @@ export default function AddSubCategoryScreen() {
       return;
     }
     setSaving(true);
+    setError("");
     try {
       await createSubCategory({
         categoryId: finalCategoryId,
@@ -60,6 +61,9 @@ export default function AddSubCategoryScreen() {
         description: description.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create sub category.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -98,11 +102,13 @@ export default function AddSubCategoryScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button
-          title="Save Sub Category"
-          onPress={onSave}
-          disabled={saving || loadingCategories}
-        />
+        <View style={styles.buttonRow}>
+          <Button
+            title="Save Sub Category"
+            onPress={onSave}
+            disabled={saving || loadingCategories || !name.trim()}
+          />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loadingCategories} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -128,4 +134,5 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

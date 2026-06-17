@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -66,13 +68,21 @@ export default function EditExpenseScreen() {
     [categoryId, description, amount],
   );
 
-  const onSave = async () => {
+  const hasUnsavedChanges =
+    categoryId !== String(expense.categoryId) ||
+    subCategoryId !== String(expense.subCategoryId ?? "") ||
+    description !== (expense.description || "") ||
+    amount !== String(expense.amount ?? "") ||
+    date.toDateString() !== new Date(expense.date).toDateString() ||
+    notes !== (expense.notes || "");
+
+  const saveAndGoBack = async () => {
     if (!canSave) {
       setError("Fill all required fields with valid values.");
-      return;
+      return false;
     }
-
     setSaving(true);
+    setError("");
     try {
       await updateExpense(expense.id, {
         categoryId: Number(categoryId),
@@ -82,11 +92,88 @@ export default function EditExpenseScreen() {
         description: description.trim(),
         notes: notes.trim() || undefined,
       });
-      navigation.goBack();
+      return true;
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to update expense.";
+      setError(msg);
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const onSave = async () => {
+    const success = await saveAndGoBack();
+    if (success) navigation.goBack();
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (!hasUnsavedChanges) return;
+
+      e.preventDefault();
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.dispatch(e.data.action);
+              });
+            },
+          },
+        ],
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, hasUnsavedChanges, onSave]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (!hasUnsavedChanges) return false;
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.goBack();
+              });
+            },
+          },
+        ],
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () =>
+      BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+  }, [navigation, hasUnsavedChanges]);
 
   return (
     <KeyboardAvoidingView
@@ -147,7 +234,7 @@ export default function EditExpenseScreen() {
         >
           <Text>{format(date, "dd MMM yyyy")}</Text>
         </TouchableOpacity>
-        {showDatePicker ? (
+        {showDatePicker && (
           <DateTimePicker
             value={date}
             mode="date"
@@ -156,11 +243,17 @@ export default function EditExpenseScreen() {
               if (nextDate) setDate(nextDate);
             }}
           />
-        ) : null}
+        )}
 
         <Input label="Notes" value={notes} onChangeText={setNotes} multiline />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Update Expense" onPress={onSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button
+            title="Update Expense"
+            onPress={onSave}
+            disabled={saving || !hasUnsavedChanges}
+          />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loading} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -186,4 +279,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   error: { color: "#d32f2f" },
+  buttonRow: { marginTop: 12 },
 });

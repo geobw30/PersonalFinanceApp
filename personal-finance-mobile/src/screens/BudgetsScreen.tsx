@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -48,6 +49,12 @@ const safeDateLabel = (value: string) => {
 };
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+const confirmDelete = (label: string, onConfirm: () => void) =>
+  Alert.alert("Confirm Delete", `Delete this ${label}?`, [
+    { text: "Cancel", style: "cancel" },
+    { text: "Delete", style: "destructive", onPress: onConfirm },
+  ]);
 
 export default function BudgetsScreen() {
   const navigation = useNavigation<Nav>();
@@ -205,10 +212,12 @@ export default function BudgetsScreen() {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.btnDelete}
-                  onPress={async () => {
-                    await deleteBudget(budget.id);
-                    await loadData();
-                  }}
+                  onPress={() =>
+                    confirmDelete("budget", async () => {
+                      await deleteBudget(budget.id);
+                      await loadData();
+                    })
+                  }
                 >
                   <Text style={styles.btnTextDelete}>Delete</Text>
                 </TouchableOpacity>

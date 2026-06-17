@@ -1,26 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import {
-  NativeStackNavigationProp,
-  NativeStackScreenProps,
-} from "@react-navigation/native-stack";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { updateInvestmentType } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { RootStackParamList } from "../types";
 
-type Props = NativeStackScreenProps<RootStackParamList, "EditInvestmentType">;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function EditInvestmentTypeScreen() {
   const navigation = useNavigation<Nav>();
-  const route = useRoute<Props["route"]>();
+  const route = useRoute<any>();
   const { investmentType } = route.params;
 
   const [saving, setSaving] = useState(false);
@@ -30,22 +29,67 @@ export default function EditInvestmentTypeScreen() {
   );
   const [error, setError] = useState("");
 
-  const onSave = async () => {
+  const hasUnsavedChanges =
+    name !== investmentType.name || description !== (investmentType.description ?? "");
+
+  const saveAndGoBack = async () => {
     if (!name.trim()) {
       setError("Name is required.");
-      return;
+      return false;
     }
     setSaving(true);
+    setError("");
     try {
       await updateInvestmentType(investmentType.id, {
         name: name.trim(),
         description: description.trim() || undefined,
       });
-      navigation.goBack();
+      return true;
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to update investment type.";
+      setError(msg);
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const onSave = async () => {
+    const success = await saveAndGoBack();
+    if (success) navigation.goBack();
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (!hasUnsavedChanges) return false;
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.goBack();
+              });
+            },
+          },
+        ],
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+  }, [navigation, hasUnsavedChanges]);
 
   return (
     <KeyboardAvoidingView
@@ -61,7 +105,9 @@ export default function EditInvestmentTypeScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Update" onPress={onSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button title="Update" onPress={onSave} disabled={saving || !hasUnsavedChanges} />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={saving} message="Saving…" />
     </KeyboardAvoidingView>
@@ -72,4 +118,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   content: { padding: 16 },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

@@ -1,28 +1,29 @@
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import {
-  NativeStackNavigationProp,
-  NativeStackScreenProps,
-} from "@react-navigation/native-stack";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { getInvestmentTypes, updateInvestment } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { InvestmentType, RootStackParamList } from "../types";
 
-type Props = NativeStackScreenProps<RootStackParamList, "EditInvestment">;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 export default function EditInvestmentScreen() {
   const navigation = useNavigation<Nav>();
-  const route = useRoute<Props["route"]>();
+  const route = useRoute<any>();
   const { investment } = route.params;
 
   const [investmentTypes, setInvestmentTypes] = useState<InvestmentType[]>([]);
@@ -36,7 +37,8 @@ export default function EditInvestmentScreen() {
   const [currentValue, setCurrentValue] = useState(
     String(investment.currentValue),
   );
-  const [date, setDate] = useState(investment.date.split("T")[0]);
+  const [date, setDate] = useState(new Date(investment.date));
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [returnRate, setReturnRate] = useState(
     investment.returnRate != null ? String(investment.returnRate) : "",
   );
@@ -49,27 +51,120 @@ export default function EditInvestmentScreen() {
       .finally(() => setLoading(false));
   }, []);
 
-  const onSave = async () => {
+  const hasUnsavedChanges =
+    name !== investment.name ||
+    investmentTypeId !== String(investment.investmentTypeId) ||
+    amount !== String(investment.amount) ||
+    currentValue !== String(investment.currentValue) ||
+    date.toDateString() !== new Date(investment.date).toDateString() ||
+    returnRate !== (investment.returnRate != null ? String(investment.returnRate) : "") ||
+    notes !== (investment.notes ?? "");
+
+  const saveAndGoBack = async () => {
     if (!name.trim() || !investmentTypeId || !amount || !currentValue) {
       setError("Name, investment type, amount and current value are required.");
-      return;
+      return false;
+    }
+    const numericAmount = parseFloat(amount);
+    const numericCurrentValue = parseFloat(currentValue);
+    if (isNaN(numericAmount) || numericAmount < 0) {
+      setError("Enter a valid non-negative amount.");
+      return false;
+    }
+    if (isNaN(numericCurrentValue) || numericCurrentValue < 0) {
+      setError("Enter a valid non-negative current value.");
+      return false;
     }
     setSaving(true);
+    setError("");
     try {
       await updateInvestment(investment.id, {
         name: name.trim(),
         investmentTypeId: Number(investmentTypeId),
-        amount: parseFloat(amount),
-        currentValue: parseFloat(currentValue),
-        date,
+        amount: numericAmount,
+        currentValue: numericCurrentValue,
+        date: date.toISOString(),
         returnRate: returnRate ? parseFloat(returnRate) : undefined,
         notes: notes.trim() || undefined,
       });
-      navigation.goBack();
+      return true;
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to update investment.";
+      setError(msg);
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const onSave = async () => {
+    const success = await saveAndGoBack();
+    if (success) navigation.goBack();
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (!hasUnsavedChanges) return;
+
+      e.preventDefault();
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.dispatch(e.data.action),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.dispatch(e.data.action);
+              });
+            },
+          },
+        ],
+      );
+    });
+
+    return unsubscribe;
+  }, [navigation, hasUnsavedChanges]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (!hasUnsavedChanges) return false;
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.goBack();
+              });
+            },
+          },
+        ],
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+  }, [navigation, hasUnsavedChanges]);
 
   return (
     <KeyboardAvoidingView
@@ -82,7 +177,7 @@ export default function EditInvestmentScreen() {
         <View style={styles.pickerWrapper}>
           <Picker
             selectedValue={investmentTypeId}
-            onValueChange={(v) => setInvestmentTypeId(String(v))}
+            onValueChange={(v: string | number) => setInvestmentTypeId(String(v))}
           >
             {investmentTypes.map((t) => (
               <Picker.Item key={t.id} label={t.name} value={String(t.id)} />
@@ -90,18 +185,34 @@ export default function EditInvestmentScreen() {
           </Picker>
         </View>
         <Input
-          label="Amount"
+          label="Amount (UGX)"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
         />
         <Input
-          label="Current Value"
+          label="Current Value (UGX)"
           value={currentValue}
           onChangeText={setCurrentValue}
           keyboardType="numeric"
         />
-        <Input label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text>{format(date, "dd MMM yyyy")}</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            onChange={(_, nextDate?: Date) => {
+              setShowDatePicker(false);
+              if (nextDate) setDate(nextDate);
+            }}
+          />
+        )}
         <Input
           label="Return Rate % (optional)"
           value={returnRate}
@@ -115,11 +226,13 @@ export default function EditInvestmentScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button
-          title="Update Investment"
-          onPress={onSave}
-          disabled={saving || loading}
-        />
+        <View style={styles.buttonRow}>
+          <Button
+            title="Update Investment"
+            onPress={onSave}
+            disabled={saving || loading || !hasUnsavedChanges}
+          />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loading} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -144,5 +257,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginBottom: 12,
   },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    marginHorizontal: 10,
+  },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

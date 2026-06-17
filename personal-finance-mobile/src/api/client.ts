@@ -81,7 +81,7 @@ export const updateExpense = (
     description: string;
     notes?: string;
   },
-) => apiClient.put<void>(`/expenses/${id}`, data);
+) => apiClient.put<void>(`/expenses/${id}`, { id, ...data });
 export const deleteExpense = (id: number) => apiClient.delete(`/expenses/${id}`);
 
 // Investments API
@@ -89,7 +89,7 @@ export const getInvestments = () => apiClient.get<Investment[]>('/investments');
 export const createInvestment = (data: Omit<Investment, 'id' | 'investmentType'>) =>
   apiClient.post<Investment>('/investments', data);
 export const updateInvestment = (id: number, data: Omit<Investment, 'id' | 'investmentType'>) =>
-  apiClient.put<void>(`/investments/${id}`, data);
+  apiClient.put<void>(`/investments/${id}`, { id, ...data });
 export const deleteInvestment = (id: number) => apiClient.delete(`/investments/${id}`);
 
 // Savings API
@@ -97,7 +97,7 @@ export const getSavings = () => apiClient.get<Saving[]>('/savings');
 export const createSaving = (data: Omit<Saving, 'id'>) =>
   apiClient.post<Saving>('/savings', data);
 export const updateSaving = (id: number, data: Omit<Saving, 'id'>) =>
-  apiClient.put<void>(`/savings/${id}`, data);
+  apiClient.put<void>(`/savings/${id}`, { id, ...data });
 export const deleteSaving = (id: number) => apiClient.delete(`/savings/${id}`);
 
 // Incomes API
@@ -107,7 +107,7 @@ export const getIncomesByMonth = (year: number, month: number) =>
 export const createIncome = (data: Omit<Income, 'id'>) =>
   apiClient.post<Income>('/incomes', data);
 export const updateIncome = (id: number, data: Omit<Income, 'id'>) =>
-  apiClient.put<void>(`/incomes/${id}`, data);
+  apiClient.put<void>(`/incomes/${id}`, { id, ...data });
 export const deleteIncome = (id: number) => apiClient.delete(`/incomes/${id}`);
 
 // Financial Summary API

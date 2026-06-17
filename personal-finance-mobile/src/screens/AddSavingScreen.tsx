@@ -4,12 +4,15 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { createSaving } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { RootStackParamList } from "../types";
@@ -31,7 +34,8 @@ export default function AddSavingScreen() {
   const [type, setType] = useState(SAVING_TYPES[0]);
   const [currentAmount, setCurrentAmount] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [interestRate, setInterestRate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -41,18 +45,27 @@ export default function AddSavingScreen() {
       setError("Name and current amount are required.");
       return;
     }
+    const numericCurrent = parseFloat(currentAmount);
+    if (isNaN(numericCurrent) || numericCurrent < 0) {
+      setError("Enter a valid non-negative current amount.");
+      return;
+    }
     setSaving(true);
+    setError("");
     try {
       await createSaving({
         name: name.trim(),
         type,
-        currentAmount: parseFloat(currentAmount),
+        currentAmount: numericCurrent,
         targetAmount: targetAmount ? parseFloat(targetAmount) : undefined,
-        date,
+        date: date.toISOString(),
         interestRate: interestRate ? parseFloat(interestRate) : undefined,
         notes: notes.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create saving.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -77,18 +90,34 @@ export default function AddSavingScreen() {
           </Picker>
         </View>
         <Input
-          label="Current Amount"
+          label="Current Amount (UGX)"
           value={currentAmount}
           onChangeText={setCurrentAmount}
           keyboardType="numeric"
         />
         <Input
-          label="Target Amount (optional)"
+          label="Target Amount (UGX, optional)"
           value={targetAmount}
           onChangeText={setTargetAmount}
           keyboardType="numeric"
         />
-        <Input label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text>{format(date, "dd MMM yyyy")}</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            onChange={(_, nextDate) => {
+              setShowDatePicker(false);
+              if (nextDate) setDate(nextDate);
+            }}
+          />
+        )}
         <Input
           label="Interest Rate % (optional)"
           value={interestRate}
@@ -102,7 +131,9 @@ export default function AddSavingScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Save" onPress={onSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button title="Save" onPress={onSave} disabled={saving} />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={saving} message="Saving…" />
     </KeyboardAvoidingView>
@@ -126,5 +157,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginBottom: 12,
   },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    marginHorizontal: 10,
+  },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

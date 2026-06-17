@@ -66,18 +66,26 @@ export default function AddExpenseScreen() {
       setError("Fill all required fields with valid values.");
       return;
     }
-
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      setError("Enter a valid positive amount.");
+      return;
+    }
     setSaving(true);
+    setError("");
     try {
       await createExpense({
         categoryId: Number(categoryId),
         subCategoryId: subCategoryId ? Number(subCategoryId) : undefined,
-        amount: Number(amount),
+        amount: numericAmount,
         date: date.toISOString(),
         description: description.trim(),
         notes: notes.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create expense.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -142,7 +150,7 @@ export default function AddExpenseScreen() {
         >
           <Text>{format(date, "dd MMM yyyy")}</Text>
         </TouchableOpacity>
-        {showDatePicker ? (
+        {showDatePicker && (
           <DateTimePicker
             value={date}
             mode="date"
@@ -151,11 +159,13 @@ export default function AddExpenseScreen() {
               if (nextDate) setDate(nextDate);
             }}
           />
-        ) : null}
+        )}
 
         <Input label="Notes" value={notes} onChangeText={setNotes} multiline />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Save Expense" onPress={onSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button title="Save Expense" onPress={onSave} disabled={saving || !canSave} />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loading} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -181,4 +191,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   error: { color: "#d32f2f" },
+  buttonRow: { marginTop: 12 },
 });

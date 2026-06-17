@@ -4,6 +4,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
@@ -27,12 +28,16 @@ export default function AddCategoryScreen() {
       return;
     }
     setSaving(true);
+    setError("");
     try {
       await createCategory({
         name: name.trim(),
         description: description.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create category.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -52,7 +57,9 @@ export default function AddCategoryScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Save Category" onPress={onSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button title="Save Category" onPress={onSave} disabled={saving || !name.trim()} />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={saving} message="Saving…" />
     </KeyboardAvoidingView>
@@ -63,4 +70,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   content: { padding: 16 },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

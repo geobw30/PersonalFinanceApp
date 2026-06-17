@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -55,14 +57,20 @@ export default function EditBudgetScreen() {
       : budget.name;
   }, [categories, categoryId, month, budget.name]);
 
-  const handleSave = async () => {
+  const hasUnsavedChanges =
+    categoryId !== String(budget.categoryId) ||
+    amount !== String(budget.amount) ||
+    month.getMonth() !== new Date(budget.startDate).getMonth() ||
+    month.getFullYear() !== new Date(budget.startDate).getFullYear();
+
+  const saveAndGoBack = async () => {
     const value = Number(amount);
     if (!categoryId || Number.isNaN(value) || value <= 0) {
       setError("Select a category and enter a valid amount.");
-      return;
+      return false;
     }
-
     setSaving(true);
+    setError("");
     try {
       const { startDate, endDate } = getUtcMonthRange(month);
       await updateBudget(budget.id, {
@@ -72,11 +80,52 @@ export default function EditBudgetScreen() {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });
-      navigation.goBack();
+      return true;
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to update budget.";
+      setError(msg);
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const handleSave = async () => {
+    const success = await saveAndGoBack();
+    if (success) navigation.goBack();
+  };
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (!hasUnsavedChanges) return false;
+
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. What would you like to do?",
+        [
+          { text: "Stay", style: "cancel" as const },
+          {
+            text: "Discard",
+            style: "destructive" as const,
+            onPress: () => navigation.goBack(),
+          },
+          {
+            text: "Save",
+            style: "default" as const,
+            onPress: () => {
+              saveAndGoBack().then((success) => {
+                if (success) navigation.goBack();
+              });
+            },
+          },
+        ],
+      );
+      return true;
+    };
+
+    BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+  }, [navigation, hasUnsavedChanges]);
 
   return (
     <KeyboardAvoidingView
@@ -115,7 +164,7 @@ export default function EditBudgetScreen() {
         >
           <Text>{format(month, "MMMM yyyy")}</Text>
         </TouchableOpacity>
-        {showMonthPicker ? (
+        {showMonthPicker && (
           <DateTimePicker
             value={month}
             mode="date"
@@ -124,10 +173,12 @@ export default function EditBudgetScreen() {
               if (date) setMonth(date);
             }}
           />
-        ) : null}
+        )}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button title="Update Budget" onPress={handleSave} disabled={saving} />
+        <View style={styles.buttonRow}>
+          <Button title="Update Budget" onPress={handleSave} disabled={saving || !hasUnsavedChanges} />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loading} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -153,4 +204,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   error: { color: "#d32f2f" },
+  buttonRow: { marginTop: 12 },
 });

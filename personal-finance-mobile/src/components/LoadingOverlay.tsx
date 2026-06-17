@@ -1,11 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Modal,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Animated, Image, Modal, StyleSheet, View } from "react-native";
 import { Text } from "@rneui/themed";
 
 interface Props {
@@ -19,15 +13,13 @@ export default function LoadingOverlay({
 }: Props) {
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
-  const ringScale = useRef(new Animated.Value(1)).current;
-  const ringOpacity = useRef(new Animated.Value(0.7)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
       scaleAnim.setValue(0.8);
       opacityAnim.setValue(0);
-      ringScale.setValue(1);
-      ringOpacity.setValue(0.7);
+      rotateAnim.setValue(0);
       return;
     }
 
@@ -45,38 +37,25 @@ export default function LoadingOverlay({
       }),
     ]).start();
 
-    const pulse = Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(ringScale, {
-            toValue: 1.6,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(ringScale, {
-            toValue: 1,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(ringOpacity, {
-            toValue: 0,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(ringOpacity, {
-            toValue: 0.7,
-            duration: 0,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
+    const rotate = Animated.loop(
+      Animated.timing(rotateAnim, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      }),
     );
-    pulse.start();
 
-    return () => pulse.stop();
-  }, [visible, scaleAnim, opacityAnim, ringScale, ringOpacity]);
+    rotate.start();
+
+    return () => {
+      rotate.stop();
+    };
+  }, [visible, scaleAnim, opacityAnim, rotateAnim]);
+
+  const rotateInterpolate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
 
   return (
     <Modal
@@ -92,15 +71,13 @@ export default function LoadingOverlay({
             { transform: [{ scale: scaleAnim }], opacity: opacityAnim },
           ]}
         >
-          <View style={styles.spinnerWrap}>
-            <Animated.View
-              style={[
-                styles.ring,
-                { transform: [{ scale: ringScale }], opacity: ringOpacity },
-              ]}
-            />
-            <ActivityIndicator size="large" color="#1976d2" />
-          </View>
+          <Animated.Image
+            source={require("../../assets/app-icon.png")}
+            style={[
+              styles.image,
+              { transform: [{ rotate: rotateInterpolate }] },
+            ]}
+          />
           <Text style={styles.message}>{message}</Text>
         </Animated.View>
       </View>
@@ -111,7 +88,7 @@ export default function LoadingOverlay({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(10, 20, 50, 0.48)",
+    backgroundColor: "rgba(0, 0, 0, 0.15)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -128,19 +105,10 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 14,
   },
-  spinnerWrap: {
-    width: 58,
-    height: 58,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  ring: {
-    position: "absolute",
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    borderWidth: 2.5,
-    borderColor: "#1976d2",
+  image: {
+    width: 56,
+    height: 56,
+    borderRadius: 6,
   },
   message: {
     fontSize: 15,

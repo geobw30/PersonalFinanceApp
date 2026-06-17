@@ -4,12 +4,15 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { createInvestment, getInvestmentTypes } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { InvestmentType, RootStackParamList } from "../types";
@@ -25,7 +28,8 @@ export default function AddInvestmentScreen() {
   const [investmentTypeId, setInvestmentTypeId] = useState("");
   const [amount, setAmount] = useState("");
   const [currentValue, setCurrentValue] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [returnRate, setReturnRate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
@@ -44,18 +48,32 @@ export default function AddInvestmentScreen() {
       setError("Name, investment type, amount and current value are required.");
       return;
     }
+    const numericAmount = parseFloat(amount);
+    const numericCurrentValue = parseFloat(currentValue);
+    if (isNaN(numericAmount) || numericAmount < 0) {
+      setError("Enter a valid non-negative amount.");
+      return;
+    }
+    if (isNaN(numericCurrentValue) || numericCurrentValue < 0) {
+      setError("Enter a valid non-negative current value.");
+      return;
+    }
     setSaving(true);
+    setError("");
     try {
       await createInvestment({
         name: name.trim(),
         investmentTypeId: Number(investmentTypeId),
-        amount: parseFloat(amount),
-        currentValue: parseFloat(currentValue),
-        date,
+        amount: numericAmount,
+        currentValue: numericCurrentValue,
+        date: date.toISOString(),
         returnRate: returnRate ? parseFloat(returnRate) : undefined,
         notes: notes.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create investment.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -80,18 +98,34 @@ export default function AddInvestmentScreen() {
           </Picker>
         </View>
         <Input
-          label="Amount"
+          label="Amount (UGX)"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
         />
         <Input
-          label="Current Value"
+          label="Current Value (UGX)"
           value={currentValue}
           onChangeText={setCurrentValue}
           keyboardType="numeric"
         />
-        <Input label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text>{format(date, "dd MMM yyyy")}</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            onChange={(_, nextDate) => {
+              setShowDatePicker(false);
+              if (nextDate) setDate(nextDate);
+            }}
+          />
+        )}
         <Input
           label="Return Rate % (optional)"
           value={returnRate}
@@ -105,11 +139,13 @@ export default function AddInvestmentScreen() {
           multiline
         />
         {error ? <Text style={styles.error}>{error}</Text> : null}
-        <Button
-          title="Save Investment"
-          onPress={onSave}
-          disabled={saving || loading}
-        />
+        <View style={styles.buttonRow}>
+          <Button
+            title="Save Investment"
+            onPress={onSave}
+            disabled={saving || loading}
+          />
+        </View>
       </ScrollView>
       <LoadingOverlay visible={loading} />
       <LoadingOverlay visible={saving} message="Saving…" />
@@ -134,5 +170,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     marginBottom: 12,
   },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    marginHorizontal: 10,
+  },
   error: { color: "#d32f2f", marginBottom: 12 },
+  buttonRow: { marginTop: 12 },
 });

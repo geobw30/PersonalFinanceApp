@@ -5,12 +5,15 @@ import {
   ScrollView,
   StyleSheet,
   Switch,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { Button, Input, Text } from "@rneui/themed";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Picker } from "@react-native-picker/picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { format } from "date-fns";
 import { createIncome } from "../api/client";
 import LoadingOverlay from "../components/LoadingOverlay";
 import type { RootStackParamList } from "../types";
@@ -33,7 +36,8 @@ export default function AddIncomeScreen() {
   const [source, setSource] = useState("");
   const [type, setType] = useState(INCOME_TYPES[0]);
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [isRecurring, setIsRecurring] = useState(false);
   const [frequency, setFrequency] = useState(FREQUENCIES[0]);
   const [notes, setNotes] = useState("");
@@ -44,18 +48,27 @@ export default function AddIncomeScreen() {
       setError("Source and amount are required.");
       return;
     }
+    const numericAmount = parseFloat(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      setError("Enter a valid positive amount.");
+      return;
+    }
     setSaving(true);
+    setError("");
     try {
       await createIncome({
         source: source.trim(),
         type,
-        amount: parseFloat(amount),
-        date,
+        amount: numericAmount,
+        date: date.toISOString(),
         isRecurring,
         frequency: isRecurring ? frequency : undefined,
         notes: notes.trim() || undefined,
       });
       navigation.goBack();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "Failed to create income.";
+      setError(msg);
     } finally {
       setSaving(false);
     }
@@ -80,12 +93,28 @@ export default function AddIncomeScreen() {
           </Picker>
         </View>
         <Input
-          label="Amount"
+          label="Amount (UGX)"
           value={amount}
           onChangeText={setAmount}
           keyboardType="numeric"
         />
-        <Input label="Date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text>{format(date, "dd MMM yyyy")}</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={date}
+            mode="date"
+            onChange={(_, nextDate) => {
+              setShowDatePicker(false);
+              if (nextDate) setDate(nextDate);
+            }}
+          />
+        )}
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Recurring</Text>
           <Switch value={isRecurring} onValueChange={setIsRecurring} />
@@ -135,6 +164,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginHorizontal: 10,
     marginBottom: 12,
+  },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    marginHorizontal: 10,
   },
   switchRow: {
     flexDirection: "row",
